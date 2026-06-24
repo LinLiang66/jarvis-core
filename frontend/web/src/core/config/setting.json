@@ -1,0 +1,11 @@
+{
+  "themeColor": "#165DFF",
+  "isShowTabs": true,
+  "isShowAnimation": true,
+  "isMenuAccordion": false,
+  "isMenuCollapse": false,
+  "isMenuDark": false,
+  "menuWidth": 220,
+  "headerHeight": 60,
+  "layoutMode": "left"
+}

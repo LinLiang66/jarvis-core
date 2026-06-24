@@ -1,0 +1,101 @@
+# 快速开始
+
+## 环境要求
+
+| 工具 | 版本 |
+|------|------|
+| Go | 1.21+（Docker 构建使用 1.23） |
+| Node.js | 18+ |
+| pnpm | 8+ |
+| MySQL | 8.0+（生产推荐；本地可仅用 SQLite） |
+| Redis | 6+（可选，登录 token 缓存） |
+| Docker | 23+（仅容器部署时需要） |
+
+## 1. 克隆仓库
+
+```powershell
+git clone https://gitcode.com/LinLiang/jarvis-core.git
+cd jarvis-core
+```
+
+## 2. 启动后端
+
+```powershell
+cd backend
+copy .env.example .env
+go run ./cmd/server
+```
+
+- 默认监听 `:8000`
+- 健康检查：`GET http://localhost:8000/health`
+- 未配置 MySQL 时使用 SQLite：`backend/data/app.db`
+- 首次启动自动建表并写入种子数据
+
+### 使用 MySQL（推荐）
+
+在 `backend/.env` 中配置：
+
+```env
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=your_password
+MYSQL_DATABASE=jarvis
+```
+
+创建数据库：
+
+```sql
+CREATE DATABASE jarvis DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+## 3. 启动前端
+
+新开终端：
+
+```powershell
+cd frontend/web
+pnpm install
+pnpm dev
+```
+
+- 默认访问：http://localhost:5050
+- 开发环境通过 Vite 代理将 `/api`、`/static` 转发至 `http://localhost:8000`
+
+## 4. 登录
+
+| 字段 | 值 |
+|------|-----|
+| 用户名 | `admin` |
+| 密码 | `123456` |
+
+> 生产环境请立即修改默认密码与 `JWT_SECRET`。
+
+## 5. 验证构建
+
+```powershell
+cd backend
+go test ./...
+
+cd ../frontend/web
+pnpm build
+```
+
+## 常见问题
+
+### 端口被占用
+
+- 后端：修改 `backend/.env` 中 `SERVER_ADDR`，如 `:8080`
+- 前端：修改 `frontend/web/vite.config.ts` 中 `server.port`，或设置 `VITE_API_PROXY_TARGET` 指向新后端地址
+
+### Redis 未启动
+
+默认 `REDIS_REQUIRED=false`，Redis 不可用时降级为纯 JWT，服务仍可启动。
+
+### 旧库菜单缺失
+
+若从旧版本升级 MySQL 库，可执行：
+
+```powershell
+mysql --default-character-set=utf8mb4 -uroot -p jarvis < backend/sql/patch_sys_menu_routes.sql
+```

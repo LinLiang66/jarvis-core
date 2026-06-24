@@ -1,0 +1,78 @@
+---
+description: 后端强制开发规范（Go + Gin + GORM）
+globs: backend/**
+alwaysApply: false
+---
+
+# 后端强制规范
+
+## 通用要求
+
+- 始终使用**简体中文**与用户沟通。
+- 未经用户明确要求，**不要**创建说明文档（README、*.md 等）。
+- 未经用户明确要求，**不要**执行 git commit / push。
+- 改动范围最小化：只改与任务直接相关的代码，不顺手重构无关模块。
+- 优先复用项目已有抽象与约定，禁止凭空引入新架构或重复造轮子。
+
+## 项目路径
+
+- 后端根目录：`backend/`（Go）
+- 入口：`backend/cmd/server/main.go`
+
+## 技术栈
+
+- **Go 1.23+**、Gin、GORM、SQLite（开发）/ 可换 MySQL
+- 配置：环境变量 + `backend/.env`
+- **MySQL**：配置 `MYSQL_HOST` + `MYSQL_DATABASE` 后优先于 SQLite
+- **Redis**：`REDIS_ENABLE=true` 时用于登录 token 缓存；失败可降级（`REDIS_REQUIRED=false`）
+
+## 目录约定
+
+```
+backend/
+├── cmd/server/          # 入口
+├── internal/
+│   ├── infra/           # 基础设施
+│   │   ├── base/        # 通用 GORM CRUD 嵌入
+│   │   ├── mysql/       # MySQL 单例
+│   │   └── redis/       # Redis 封装
+│   ├── store/           # 仓储层（嵌入 base.CRUD + 分页 ListPage）
+│   ├── database/        # App 装配：MySQL/SQLite + Redis + Stores
+│   ├── config/
+│   ├── handler/         # HTTP 处理器（按模块分子包）
+│   ├── service/         # 业务服务（如 RBAC）
+│   ├── model/
+│   ├── router/
+│   └── pkg/response/    # 统一响应 { code, message, data }
+```
+
+## 接口规范
+
+与前端 `PageResult` 一致：
+
+```json
+{ "code": 200, "message": "success", "data": { "list": [], "total": 0, "page": 1, "size": 10 } }
+```
+
+- API 前缀：`/api/v1`（前端代理到 `:8000`）
+- 鉴权：`Authorization: Bearer <token>`
+
+## 业务模块
+
+| 路径 | 说明 |
+|------|------|
+| `/api/v1/auth/*` | 登录、用户信息 |
+| `/api/v1/menu/routes` | 动态路由 |
+| `/api/v1/user/*` | 用户管理 |
+| `/api/v1/role/*` | 角色管理 |
+| `/api/v1/menu/*` | 菜单管理 |
+| `/api/v1/dict/*` | 字典管理 |
+| `/api/v1/student/*` | 示例 CRUD |
+| `/api/v1/tool/*` | Agent 工具管理（启停/CRUD） |
+| `/api/v1/llm/chat` | LLM 对话（`protocol=json` 经典 / `protocol=a2ui` 流式组件） |
+| `/api/v1/llm/sessions/*` | 会话与 A2UI 专用流式接口 |
+
+## 禁止事项
+
+- ❌ 列表接口返回格式与前端 `PageResult` 不一致
+- ❌ 在用户未要求时添加测试、文档或无关注释

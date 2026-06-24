@@ -1,0 +1,39 @@
+# jarvis 后端部署（Go API 容器 :8000；宿主机默认 :666）
+#
+# 使用：
+#   cd docker
+#   copy .env.example .env
+#   docker compose up -d --build
+#
+# 访问：http://localhost:666/health
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-mirrors.aliyun.com}
+    image: jarvis-backend:latest
+    container_name: jarvis-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-666}:8000"
+    env_file:
+      - .env
+    environment:
+      SERVER_ADDR: ":8000"
+      DB_PATH: /app/data/app.db
+      UPLOAD_DIR: /app/data/uploads
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:666}
+    volumes:
+      - backend-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+volumes:
+  backend-data:
