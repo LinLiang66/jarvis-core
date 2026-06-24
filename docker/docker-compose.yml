@@ -1,4 +1,4 @@
-# jarvis 后端部署（Go API 容器 :8000；宿主机默认 :666）
+# jarvis-core 后端部署（Go API 容器 :8000；宿主机默认 :666）
 #
 # 使用：
 #   cd docker
@@ -14,8 +14,8 @@ services:
       dockerfile: docker/Dockerfile
       args:
         DEBIAN_MIRROR: ${DEBIAN_MIRROR:-mirrors.aliyun.com}
-    image: jarvis-backend:latest
-    container_name: jarvis-backend
+    image: jarvis-core-backend:latest
+    container_name: jarvis-core-backend
     restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-666}:8000"

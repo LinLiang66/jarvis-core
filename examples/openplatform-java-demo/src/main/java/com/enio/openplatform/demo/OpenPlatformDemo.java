@@ -38,7 +38,7 @@ public class OpenPlatformDemo {
 
         EchoResponse resp = client.callEncrypted(
                 OpenPlatformClient.ACTION_ECHO,
-                Map.of("hello", "jarvis demo"),
+                Map.of("hello", "jarvis-core demo"),
                 new TypeReference<EchoResponse>() {}
         );
 

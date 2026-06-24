@@ -1,4 +1,4 @@
-# 快速开始
+﻿# 快速开始
 
 ## 环境要求
 
@@ -40,13 +40,13 @@ MYSQL_HOST=127.0.0.1
 MYSQL_PORT=3306
 MYSQL_USER=root
 MYSQL_PASSWORD=your_password
-MYSQL_DATABASE=jarvis
+MYSQL_DATABASE=jarvis_core
 ```
 
 创建数据库：
 
 ```sql
-CREATE DATABASE jarvis DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE jarvis_core DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 ## 3. 启动前端
@@ -97,5 +97,5 @@ pnpm build
 若从旧版本升级 MySQL 库，可执行：
 
 ```powershell
-mysql --default-character-set=utf8mb4 -uroot -p jarvis < backend/sql/patch_sys_menu_routes.sql
+mysql --default-character-set=utf8mb4 -uroot -p jarvis_core < backend/sql/patch_sys_menu_routes.sql
 ```

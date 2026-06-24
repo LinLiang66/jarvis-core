@@ -1,12 +1,12 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"context"
 	"fmt"
 
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/pkg/logx"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/pkg/logx"
+	"jarvis-core/backend/internal/store"
 )
 
 // SyncActionRegistry 将代码注册的接口元数据同步到 MySQL 并生成文档。

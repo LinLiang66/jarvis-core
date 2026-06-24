@@ -1,13 +1,13 @@
----
+﻿---
 name: docs-config
 description: >-
-  维护 jarvis 项目文档与部署配置。通过 scripts/write_project_docs.py 更新 Markdown 文档，
+  维护 jarvis-core 项目文档与部署配置。通过 scripts/write_project_docs.py 更新 Markdown 文档，
   通过 scripts/update_docs_config.py 更新 .env.example、docker-compose 等配置模板。
   适用于用户要求改 README、docs/、部署说明、环境变量模板、Docker 配置，或提到 write_project_docs、
   update_docs_config、项目文档、部署配置等场景。
 ---
 
-# jarvis 文档与部署配置维护
+# jarvis-core 文档与部署配置维护
 
 ## 核心原则
 

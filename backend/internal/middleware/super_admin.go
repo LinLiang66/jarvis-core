@@ -1,11 +1,11 @@
-package middleware
+﻿package middleware
 
 import (
 	"github.com/gin-gonic/gin"
 
-	"jarvis/backend/internal/database"
-	"jarvis/backend/internal/pkg/response"
-	"jarvis/backend/internal/service/rbac"
+	"jarvis-core/backend/internal/database"
+	"jarvis-core/backend/internal/pkg/response"
+	"jarvis-core/backend/internal/service/rbac"
 )
 
 func RequireSuperAdmin(app *database.App) gin.HandlerFunc {

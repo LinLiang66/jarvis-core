@@ -48,7 +48,7 @@ def main() -> None:
     client.init_3des_key()
     print("3des session ready")
 
-    echo_payload = json.dumps({"hello": "jarvis demo"}, ensure_ascii=False)
+    echo_payload = json.dumps({"hello": "jarvis-core demo"}, ensure_ascii=False)
     echo_response = client.call_encrypted(ACTION_ECHO, echo_payload)
     print("echo response:", echo_response)
 

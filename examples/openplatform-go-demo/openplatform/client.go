@@ -1,4 +1,4 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jarvis/openplatform-go-demo/crypto"
+	"github.com/jarvis-core/openplatform-go-demo/crypto"
 )
 
 const (

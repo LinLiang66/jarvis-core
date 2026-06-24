@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-"""Update jarvis deployment configs (.env, docker-compose).
+﻿# -*- coding: utf-8 -*-
+"""Update jarvis-core deployment configs (.env, docker-compose).
 
 Project documentation: scripts/write_project_docs.py
 Agent skill: .cursor/skills/docs-config/SKILL.md
@@ -21,7 +21,7 @@ MYSQL_HOST=
 MYSQL_PORT=3306
 MYSQL_USER=root
 MYSQL_PASSWORD=
-MYSQL_DATABASE=jarvis
+MYSQL_DATABASE=jarvis_core
 MYSQL_CHARSET=utf8mb4
 MYSQL_SHOW_SQL=false
 MYSQL_LOG_LEVEL=2
@@ -37,7 +37,7 @@ REDIS_DB=0
 REDIS_POOL_SIZE=10
 REDIS_READ_TIMEOUT=3s
 
-JWT_SECRET=jarvis-dev-secret
+JWT_SECRET=jarvis-core-dev-secret
 JWT_EXPIRE_HOURS=24
 JWT_REFRESH_DAYS=7
 
@@ -62,7 +62,7 @@ MYSQL_HOST=
 MYSQL_PORT=3306
 MYSQL_USER=root
 MYSQL_PASSWORD=
-MYSQL_DATABASE=jarvis
+MYSQL_DATABASE=jarvis_core
 MYSQL_CHARSET=utf8mb4
 MYSQL_SHOW_SQL=false
 MYSQL_LOG_LEVEL=2
@@ -78,11 +78,11 @@ REDIS_DB=0
 REDIS_POOL_SIZE=10
 REDIS_READ_TIMEOUT=3s
 
-JWT_SECRET=jarvis-change-me-in-production
+JWT_SECRET=jarvis-core-change-me-in-production
 JWT_EXPIRE_HOURS=24
 """
 
-BACKEND_README = """# jarvis 后端
+BACKEND_README = """# jarvis-core 后端
 
 Go 语言 REST API 服务，基于 **Gin + GORM + JWT**，提供系统管理与开放平台基础能力。
 
@@ -133,7 +133,7 @@ copy .env.example .env
 | `MYSQL_HOST` / `MYSQL_DATABASE` | MySQL 连接 | — |
 | `REDIS_ENABLE` | 是否启用 Redis | `true` |
 | `REDIS_REQUIRED` | Redis 不可用时是否拒绝启动 | `false` |
-| `JWT_SECRET` | JWT 签名密钥 | `jarvis-dev-secret` |
+| `JWT_SECRET` | JWT 签名密钥 | `jarvis-core-dev-secret` |
 | `JWT_EXPIRE_HOURS` | Token 有效期（小时） | `24` |
 
 ### 2. 启动
@@ -172,13 +172,13 @@ go test ./...
 
 见项目根目录 [docker/README.md](../docker/README.md)。
 
-- 模块名：`jarvis/backend`
+- 模块名：`jarvis-core/backend`
 - Redis 连接失败时默认降级为纯 JWT（`REDIS_REQUIRED=false`）
 """
 
-FRONTEND_README = """# jarvis 前端
+FRONTEND_README = """# jarvis-core 前端
 
-基于 Vue 3 + TypeScript + Element Plus 的管理后台，配合 jarvis 后端使用。
+基于 Vue 3 + TypeScript + Element Plus 的管理后台，配合 jarvis-core 后端使用。
 
 ## 技术栈
 
@@ -239,7 +239,7 @@ docker compose up -d --build
 - 前端需单独构建部署，或将 `frontend/web/dist` 交由 Nginx 托管
 """
 
-ROOT_README = """# jarvis
+ROOT_README = """# jarvis-core
 
 前后端分离的管理后台基础框架：保留系统管理能力（用户、角色、菜单、字典）与开放平台基础能力（应用、接口、文档、统计），便于在此基础上快速搭建业务系统。
 
@@ -265,7 +265,7 @@ ROOT_README = """# jarvis
 
 | 远程 | 地址 | 用途 |
 |------|------|------|
-| origin | https://gitcode.com/LinLiang/jarvis.git | 提交代码（master） |
+| origin | https://gitcode.com/LinLiang/jarvis-core.git | 提交代码（master） |
 | upstream | https://github.com/lin-97/gi-element-plus-admin.git | 跟踪上游框架 |
 
 ```bash
@@ -334,7 +334,7 @@ docker compose up -d --build
 - MySQL（生产推荐）、Redis（可选）
 """
 
-DOCKER_COMPOSE = """# jarvis 后端部署（Go API 容器 :8000；宿主机默认 :666）
+DOCKER_COMPOSE = """# jarvis-core 后端部署（Go API 容器 :8000；宿主机默认 :666）
 #
 # 使用：
 #   cd docker
@@ -350,8 +350,8 @@ services:
       dockerfile: docker/Dockerfile
       args:
         DEBIAN_MIRROR: ${DEBIAN_MIRROR:-mirrors.aliyun.com}
-    image: jarvis-backend:latest
-    container_name: jarvis-backend
+    image: jarvis-core-backend:latest
+    container_name: jarvis-core-backend
     restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-666}:8000"
@@ -376,9 +376,9 @@ volumes:
 """
 
 SQL_PATCH = """-- 补全「系统管理」下菜单（旧库升级时使用）
--- mysql --default-character-set=utf8mb4 -uroot -p jarvis < patch_sys_menu_routes.sql
+-- mysql --default-character-set=utf8mb4 -uroot -p jarvis_core < patch_sys_menu_routes.sql
 
-USE jarvis;
+USE jarvis_core;
 SET NAMES utf8mb4;
 
 UPDATE sys_menu SET status = '1', hidden = 0, is_deleted = 0 WHERE id IN (1, 2, 3, 6, 7);

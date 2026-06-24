@@ -1,4 +1,4 @@
-# jarvis 前端
+# jarvis-core 前端
 
 Vue 3 + TypeScript + Element Plus 管理后台。
 

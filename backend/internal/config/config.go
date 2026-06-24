@@ -27,7 +27,7 @@ func Load() *Config {
 	return &Config{
 		Addr:            getEnv("SERVER_ADDR", ":8000"),
 		DBPath:          getEnv("DB_PATH", "./data/app.db"),
-		JWTSecret:       getEnv("JWT_SECRET", "jarvis-dev-secret"),
+		JWTSecret:       getEnv("JWT_SECRET", "jarvis-core-dev-secret"),
 		JWTExpire:       time.Duration(jwtHours) * time.Hour,
 		JWTRefreshDays:  getEnvInt("JWT_REFRESH_DAYS", 7),
 		RedisEnable:     getEnvBool("REDIS_ENABLE", true),

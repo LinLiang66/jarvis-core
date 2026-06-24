@@ -1,11 +1,11 @@
-package response
+﻿package response
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"jarvis/backend/internal/pkg/serialize"
+	"jarvis-core/backend/internal/pkg/serialize"
 )
 
 type Body[T any] struct {

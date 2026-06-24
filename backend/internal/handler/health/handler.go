@@ -1,10 +1,10 @@
-package health
+﻿package health
 
 import (
 	"github.com/gin-gonic/gin"
 
-	"jarvis/backend/internal/database"
-	"jarvis/backend/internal/pkg/response"
+	"jarvis-core/backend/internal/database"
+	"jarvis-core/backend/internal/pkg/response"
 )
 
 type Handler struct {

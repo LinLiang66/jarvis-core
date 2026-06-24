@@ -1,4 +1,4 @@
-# 部署指南
+﻿# 部署指南
 
 ## Docker 部署（仅后端）
 
@@ -53,7 +53,7 @@ server {
     listen 80;
     server_name admin.example.com;
 
-    root /var/www/jarvis/dist;
+    root /var/www/jarvis-core/dist;
     index index.html;
 
     location / {

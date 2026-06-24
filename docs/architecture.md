@@ -1,4 +1,4 @@
-# 架构说明
+﻿# 架构说明
 
 ## 总体架构
 
@@ -17,12 +17,12 @@
          （业务数据）              （登录 token + 开放平台会话 + 统计）      （上传目录）
 ```
 
-开放平台多副本部署时，Redis 用于共享 **token/3DES 会话**（键 `open:session:{token}`）及统计同步锁；详见 [开放平台 - 网关集群部署](openplatform.md#网关集群部署jarvis-服务端)。
+开放平台多副本部署时，Redis 用于共享 **token/3DES 会话**（键 `open:session:{token}`）及统计同步锁；详见 [开放平台 - 网关集群部署](openplatform.md#网关集群部署jarvis-core-服务端)。
 
 ## 项目目录
 
 ```text
-jarvis/
+jarvis-core/
 ├── backend/                 # Go REST API
 │   ├── cmd/server/          # 入口
 │   └── internal/

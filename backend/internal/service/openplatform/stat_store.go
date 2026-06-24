@@ -1,4 +1,4 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
-	infraredis "jarvis/backend/internal/infra/redis"
-	"jarvis/backend/internal/store"
+	infraredis "jarvis-core/backend/internal/infra/redis"
+	"jarvis-core/backend/internal/store"
 )
 
 const (

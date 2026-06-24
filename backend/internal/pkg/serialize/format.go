@@ -1,10 +1,10 @@
-package serialize
+﻿package serialize
 
 import (
 	"strconv"
 	"time"
 
-	"jarvis/backend/internal/model"
+	"jarvis-core/backend/internal/model"
 )
 
 func IDStr(id int64) string {

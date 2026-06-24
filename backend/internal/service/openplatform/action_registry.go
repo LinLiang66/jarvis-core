@@ -1,4 +1,4 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"encoding/json"
@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/pkg/jsonexample"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/pkg/jsonexample"
 )
 
 // ActionMeta 开放平台接口元数据（代码注册，启动时同步 MySQL 并生成文档）。

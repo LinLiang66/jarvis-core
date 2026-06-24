@@ -1,12 +1,12 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"jarvis/backend/internal/pkg/logx"
-	opsvc "jarvis/backend/internal/service/openplatform"
+	"jarvis-core/backend/internal/pkg/logx"
+	opsvc "jarvis-core/backend/internal/service/openplatform"
 )
 
 type GatewayHandler struct {

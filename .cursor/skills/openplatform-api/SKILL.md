@@ -1,4 +1,4 @@
----
+﻿---
 name: openplatform-api
 description: >-
   根据第三方接口地址、请求体、响应体 JSON，自动生成 funcapi 包（constants/types/agent/方法）
@@ -248,7 +248,7 @@ const (
 从用户 JSON 生成 struct，加中文注释说明用途。**每个 `*Req` 第一字段嵌入 `funcapi.AgentRequestBase`：**
 
 ```go
-import "jarvis/backend/internal/pkg/funcapi"
+import "jarvis-core/backend/internal/pkg/funcapi"
 
 // GetXxxReq 查询 xxx 请求。
 type GetXxxReq struct {

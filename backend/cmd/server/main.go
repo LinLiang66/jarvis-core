@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -6,10 +6,10 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"jarvis/backend/internal/config"
-	"jarvis/backend/internal/database"
-	"jarvis/backend/internal/pkg/logx"
-	"jarvis/backend/internal/router"
+	"jarvis-core/backend/internal/config"
+	"jarvis-core/backend/internal/database"
+	"jarvis-core/backend/internal/pkg/logx"
+	"jarvis-core/backend/internal/router"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-package store
+﻿package store
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"jarvis/backend/internal/infra/base"
-	"jarvis/backend/internal/model"
+	"jarvis-core/backend/internal/infra/base"
+	"jarvis-core/backend/internal/model"
 )
 
 type OpenAppFilter struct {

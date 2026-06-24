@@ -1,4 +1,4 @@
-package openplatform
+﻿package openplatform
 
 import "fmt"
 

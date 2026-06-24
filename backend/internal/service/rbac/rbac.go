@@ -1,11 +1,11 @@
-package rbac
+﻿package rbac
 
 import (
 	"context"
 
 	"gorm.io/gorm"
 
-	"jarvis/backend/internal/model"
+	"jarvis-core/backend/internal/model"
 )
 
 // PermissionsForUser 聚合用户权限（type=3 按钮 + type=2 带 permission 的菜单）

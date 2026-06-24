@@ -1,4 +1,4 @@
-// Demo: handshake + encrypted Echo (open.demo.echo).
+﻿// Demo: handshake + encrypted Echo (open.demo.echo).
 //
 // Create an open-platform app in admin UI first, then:
 //
@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jarvis/openplatform-go-demo/openplatform"
+	"github.com/jarvis-core/openplatform-go-demo/openplatform"
 )
 
 func envOr(key, def string) string {
@@ -55,7 +55,7 @@ func main() {
 	fmt.Println("3des session ready")
 
 	echoPayload, _ := json.Marshal(map[string]string{
-		"hello": "jarvis demo",
+		"hello": "jarvis-core demo",
 	})
 	echoResp, err := client.CallEncrypted(openplatform.ActionEcho, string(echoPayload))
 	if err != nil {

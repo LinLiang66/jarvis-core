@@ -1,12 +1,12 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"context"
 	"sync"
 	"time"
 
-	"jarvis/backend/internal/pkg/logx"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/pkg/logx"
+	"jarvis-core/backend/internal/store"
 )
 
 const (

@@ -1,12 +1,12 @@
-package database
+﻿package database
 
 import (
 	"context"
 
 	"golang.org/x/crypto/bcrypt"
 
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/store"
 )
 
 func seedSystem(ctx context.Context, s *store.Stores) error {

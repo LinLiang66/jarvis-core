@@ -1,4 +1,4 @@
-package system
+﻿package system
 
 import (
 	"strconv"
@@ -6,13 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 
-	"jarvis/backend/internal/database"
-	"jarvis/backend/internal/middleware"
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/pkg/parseid"
-	"jarvis/backend/internal/pkg/response"
-	"jarvis/backend/internal/pkg/serialize"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/database"
+	"jarvis-core/backend/internal/middleware"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/pkg/parseid"
+	"jarvis-core/backend/internal/pkg/response"
+	"jarvis-core/backend/internal/pkg/serialize"
+	"jarvis-core/backend/internal/store"
 )
 
 type UserHandler struct{ app *database.App }

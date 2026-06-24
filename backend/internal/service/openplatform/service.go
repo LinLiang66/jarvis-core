@@ -1,4 +1,4 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"context"
@@ -12,10 +12,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/pkg/crypto"
-	"jarvis/backend/internal/pkg/logx"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/pkg/crypto"
+	"jarvis-core/backend/internal/pkg/logx"
+	"jarvis-core/backend/internal/store"
 )
 
 const (

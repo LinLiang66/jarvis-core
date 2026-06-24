@@ -1,10 +1,10 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"github.com/gin-gonic/gin"
 
-	"jarvis/backend/internal/pkg/response"
-	opsvc "jarvis/backend/internal/service/openplatform"
+	"jarvis-core/backend/internal/pkg/response"
+	opsvc "jarvis-core/backend/internal/service/openplatform"
 )
 
 type DocHandler struct {

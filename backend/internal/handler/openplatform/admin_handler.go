@@ -1,15 +1,15 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/pkg/parseid"
-	"jarvis/backend/internal/pkg/response"
-	opsvc "jarvis/backend/internal/service/openplatform"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/pkg/parseid"
+	"jarvis-core/backend/internal/pkg/response"
+	opsvc "jarvis-core/backend/internal/service/openplatform"
+	"jarvis-core/backend/internal/store"
 )
 
 type AdminHandler struct {

@@ -1,4 +1,4 @@
-package auth
+﻿package auth
 
 import (
 	"strings"
@@ -8,13 +8,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"jarvis/backend/internal/config"
-	"jarvis/backend/internal/database"
-	"jarvis/backend/internal/middleware"
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/pkg/response"
-	"jarvis/backend/internal/pkg/serialize"
-	"jarvis/backend/internal/service/rbac"
+	"jarvis-core/backend/internal/config"
+	"jarvis-core/backend/internal/database"
+	"jarvis-core/backend/internal/middleware"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/pkg/response"
+	"jarvis-core/backend/internal/pkg/serialize"
+	"jarvis-core/backend/internal/service/rbac"
 )
 
 type Handler struct {

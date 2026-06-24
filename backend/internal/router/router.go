@@ -1,4 +1,4 @@
-package router
+﻿package router
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"jarvis/backend/internal/config"
-	"jarvis/backend/internal/database"
-	"jarvis/backend/internal/handler/auth"
-	"jarvis/backend/internal/handler/health"
-	openh "jarvis/backend/internal/handler/openplatform"
-	"jarvis/backend/internal/handler/system"
-	"jarvis/backend/internal/middleware"
-	opsvc "jarvis/backend/internal/service/openplatform"
+	"jarvis-core/backend/internal/config"
+	"jarvis-core/backend/internal/database"
+	"jarvis-core/backend/internal/handler/auth"
+	"jarvis-core/backend/internal/handler/health"
+	openh "jarvis-core/backend/internal/handler/openplatform"
+	"jarvis-core/backend/internal/handler/system"
+	"jarvis-core/backend/internal/middleware"
+	opsvc "jarvis-core/backend/internal/service/openplatform"
 )
 
 func Setup(cfg *config.Config, app *database.App) *gin.Engine {

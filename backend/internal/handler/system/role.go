@@ -1,17 +1,17 @@
-package system
+﻿package system
 
 import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
-	"jarvis/backend/internal/database"
-	"jarvis/backend/internal/middleware"
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/pkg/parseid"
-	"jarvis/backend/internal/pkg/response"
-	"jarvis/backend/internal/pkg/serialize"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/database"
+	"jarvis-core/backend/internal/middleware"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/pkg/parseid"
+	"jarvis-core/backend/internal/pkg/response"
+	"jarvis-core/backend/internal/pkg/serialize"
+	"jarvis-core/backend/internal/store"
 )
 
 type RoleHandler struct{ app *database.App }

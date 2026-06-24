@@ -1,4 +1,4 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/pkg/logx"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/pkg/logx"
 )
 
 // BusinessHandler 3DES 加密业务 action 处理器。

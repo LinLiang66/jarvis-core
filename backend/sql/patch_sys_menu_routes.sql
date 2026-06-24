@@ -1,7 +1,7 @@
 -- 补全「系统管理」下菜单（旧库升级时使用）
--- mysql --default-character-set=utf8mb4 -uroot -p jarvis < patch_sys_menu_routes.sql
+-- mysql --default-character-set=utf8mb4 -uroot -p jarvis_core < patch_sys_menu_routes.sql
 
-USE jarvis;
+USE jarvis_core;
 SET NAMES utf8mb4;
 
 UPDATE sys_menu SET status = '1', hidden = 0, is_deleted = 0 WHERE id IN (1, 2, 3, 6, 7);

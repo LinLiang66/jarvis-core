@@ -1,4 +1,4 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	infraredis "jarvis/backend/internal/infra/redis"
-	"jarvis/backend/internal/pkg/crypto"
+	infraredis "jarvis-core/backend/internal/infra/redis"
+	"jarvis-core/backend/internal/pkg/crypto"
 )
 
 const (

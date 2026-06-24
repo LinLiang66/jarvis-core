@@ -1,11 +1,11 @@
-package openplatform
+﻿package openplatform
 
 import (
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"jarvis/backend/internal/pkg/logx"
+	"jarvis-core/backend/internal/pkg/logx"
 )
 
 func accessLogMiddleware(module string) gin.HandlerFunc {

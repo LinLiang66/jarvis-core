@@ -1,6 +1,6 @@
 # Docker 部署
 
-打包 **jarvis 后端 API** 容器；MySQL / Redis 需自行准备。
+打包 **jarvis-core 后端 API** 容器；MySQL / Redis 需自行准备。
 
 ```powershell
 cd docker

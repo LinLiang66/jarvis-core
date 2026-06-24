@@ -1,11 +1,11 @@
-package database
+﻿package database
 
 import (
 	"context"
 	"log"
 
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/store"
 )
 
 type menuPatch struct {

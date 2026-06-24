@@ -1,4 +1,4 @@
-package middleware
+﻿package middleware
 
 import (
 	"strings"
@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
-	"jarvis/backend/internal/config"
-	"jarvis/backend/internal/pkg/response"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/config"
+	"jarvis-core/backend/internal/pkg/response"
+	"jarvis-core/backend/internal/store"
 )
 
 type Claims struct {

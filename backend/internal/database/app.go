@@ -1,4 +1,4 @@
-package database
+﻿package database
 
 import (
 	"context"
@@ -10,10 +10,10 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"jarvis/backend/internal/config"
-	"jarvis/backend/internal/infra/mysql"
-	infraredis "jarvis/backend/internal/infra/redis"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/config"
+	"jarvis-core/backend/internal/infra/mysql"
+	infraredis "jarvis-core/backend/internal/infra/redis"
+	"jarvis-core/backend/internal/store"
 )
 
 type App struct {

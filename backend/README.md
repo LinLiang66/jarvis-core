@@ -1,4 +1,4 @@
-# jarvis 后端
+# jarvis-core 后端
 
 Go REST API：**Gin + GORM + JWT**，提供系统管理与开放平台能力。
 
@@ -43,4 +43,4 @@ go test ./...
 
 见 [docs/deployment.md](../docs/deployment.md) 与 [docker/README.md](../docker/README.md)。
 
-模块名：`jarvis/backend`
+模块名：`jarvis-core/backend`

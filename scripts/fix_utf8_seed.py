@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Fix UTF-8 Chinese in seed and openplatform meta files."""
 from pathlib import Path
 
@@ -37,8 +37,8 @@ import (
 	"context"
 	"log"
 
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/store"
 )
 
 type menuPatch struct {
@@ -140,8 +140,8 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"jarvis/backend/internal/model"
-	"jarvis/backend/internal/store"
+	"jarvis-core/backend/internal/model"
+	"jarvis-core/backend/internal/store"
 )
 
 func seedSystem(ctx context.Context, s *store.Stores) error {

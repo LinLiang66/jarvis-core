@@ -31,7 +31,7 @@ git commit -m "feat(backend): 注册系统管理与开放平台路由"
 
 ```powershell
 git add README.md backend/README.md docker/.env.example
-git commit -m "docs: 更新 jarvis 部署说明与环境变量模板"
+git commit -m "docs: 更新 jarvis-core 部署说明与环境变量模板"
 ```
 
 ## 示例 5：修复 bug

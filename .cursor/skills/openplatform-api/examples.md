@@ -1,4 +1,4 @@
-# 示例：接入 getDictItems
+﻿# 示例：接入 getDictItems
 
 > **通用约定**：下文所有 `*Req` 均须嵌入 `funcapi.AgentRequestBase` 作为第一字段；multipart 接口在函数内先 `PrepareAgentRequest` 再发请求。详见 [SKILL.md](SKILL.md)「AgentRequestBase（必做）」。
 
@@ -53,7 +53,7 @@ getDictItemsEndpoint = "/yrh-xt/app/common/getDictItems"
 ### types.go（追加）
 
 ```go
-import "jarvis/backend/internal/pkg/funcapi"
+import "jarvis-core/backend/internal/pkg/funcapi"
 
 type DictItem struct {
     ItemValue string `json:"itemValue"`

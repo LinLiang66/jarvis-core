@@ -1,7 +1,7 @@
 ---
 name: git-commit
 description: >-
-  按 jarvis 仓库规范将代码提交并可选推送到远程。涵盖变更审查、暂存范围、Conventional 风格
+  按 jarvis-core 仓库规范将代码提交并可选推送到远程。涵盖变更审查、暂存范围、Conventional 风格
   中文提交说明、Git 安全约束与 Windows/PowerShell 命令。适用于用户说提交代码、git commit、
   推送到仓库、帮我 commit、保存到 git 等场景。
 ---

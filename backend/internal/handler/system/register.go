@@ -1,9 +1,9 @@
-package system
+﻿package system
 
 import (
 	"github.com/gin-gonic/gin"
 
-	"jarvis/backend/internal/database"
+	"jarvis-core/backend/internal/database"
 )
 
 func Register(rg *gin.RouterGroup, app *database.App) {

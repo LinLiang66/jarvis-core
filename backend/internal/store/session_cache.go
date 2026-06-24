@@ -1,11 +1,11 @@
-package store
+﻿package store
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	infraredis "jarvis/backend/internal/infra/redis"
+	infraredis "jarvis-core/backend/internal/infra/redis"
 )
 
 const authTokenKeyPrefix = "auth:token:"
