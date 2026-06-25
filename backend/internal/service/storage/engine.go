@@ -275,6 +275,53 @@ func isIPAddress(host string) bool {
 	return net.ParseIP(host) != nil
 }
 
+func isCOSEndpoint(host string) bool {
+	h := strings.ToLower(host)
+	return strings.Contains(h, ".myqcloud.com") || strings.Contains(h, ".tencentcos.cn")
+}
+
+func isAliyunOSSEndpoint(host string) bool {
+	return strings.Contains(strings.ToLower(host), "aliyuncs.com")
+}
+
+// cosRegionFromHost 从 cos.ap-guangzhou.myqcloud.com 解析 ap-guangzhou
+func cosRegionFromHost(host string) string {
+	parts := strings.Split(strings.ToLower(strings.TrimSpace(host)), ".")
+	for i, part := range parts {
+		if part == "cos" && i+1 < len(parts) && parts[i+1] != "" {
+			return parts[i+1]
+		}
+	}
+	return ""
+}
+
+// normalizeOSSHost 若 Endpoint 误填为 bucket.cos.region.myqcloud.com，去掉 bucket 前缀
+func normalizeOSSHost(host, bucket string) string {
+	host = strings.TrimSpace(host)
+	bucket = strings.TrimSpace(bucket)
+	if bucket != "" && strings.HasPrefix(strings.ToLower(host), strings.ToLower(bucket)+".") {
+		return host[len(bucket)+1:]
+	}
+	return host
+}
+
+func ossBucketLookup(host string) minio.BucketLookupType {
+	if isIPAddress(host) {
+		return minio.BucketLookupPath
+	}
+	if isCOSEndpoint(host) || isAliyunOSSEndpoint(host) {
+		return minio.BucketLookupDNS
+	}
+	return minio.BucketLookupAuto
+}
+
+func ossRegion(host string) string {
+	if r := cosRegionFromHost(host); r != "" {
+		return r
+	}
+	return "us-east-1"
+}
+
 func (e *Engine) ossClient() (*minio.Client, string, error) {
 	endpoint := strings.TrimSpace(e.storage.Endpoint)
 	if endpoint == "" {
@@ -289,17 +336,19 @@ func (e *Engine) ossClient() (*minio.Client, string, error) {
 		host = strings.TrimPrefix(strings.TrimPrefix(endpoint, "https://"), "http://")
 	}
 	secure := u.Scheme == "https" || !strings.HasPrefix(strings.ToLower(endpoint), "http://")
-	client, err := minio.New(host, &minio.Options{
-		Creds:  credentials.NewStaticV4(e.storage.AccessKey, e.storage.SecretKey, ""),
-		Secure: secure,
-		Region: "us-east-1",
-	})
-	if err != nil {
-		return nil, "", err
-	}
 	bucket := strings.TrimSpace(e.storage.BucketName)
 	if bucket == "" {
 		return nil, "", fmt.Errorf("Bucket 不能为空")
+	}
+	host = normalizeOSSHost(host, bucket)
+	client, err := minio.New(host, &minio.Options{
+		Creds:        credentials.NewStaticV4(e.storage.AccessKey, e.storage.SecretKey, ""),
+		Secure:       secure,
+		Region:       ossRegion(host),
+		BucketLookup: ossBucketLookup(host),
+	})
+	if err != nil {
+		return nil, "", err
 	}
 	return client, bucket, nil
 }

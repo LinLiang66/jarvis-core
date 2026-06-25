@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -125,6 +126,12 @@ type SysStorage struct {
 	Status      string         `gorm:"size:1;default:0" json:"status"`
 }
 
+// 文件记录 type：0=文件夹 1=文件
+const (
+	FileTypeDir  = 0
+	FileTypeFile = 1
+)
+
 // SysFile 文件记录
 type SysFile struct {
 	ID           int64          `gorm:"primarykey" json:"id"`
@@ -140,7 +147,15 @@ type SysFile struct {
 	Size         int64          `json:"size"`
 	Extension    string         `gorm:"size:32" json:"extension"`
 	ContentType  string         `gorm:"size:128" json:"content_type"`
-	Type         int            `gorm:"default:1" json:"type"` // 0 文件夹 1 文件
+	Type         int            `gorm:"not null" json:"type"` // 0 文件夹 1 文件
+}
+
+// IsDir 判断是否为文件夹（兼容历史误写 type=1 的目录行）
+func (f SysFile) IsDir() bool {
+	if f.Type == FileTypeDir {
+		return true
+	}
+	return f.Extension == "" && f.Size == 0 && strings.TrimSpace(f.URL) == ""
 }
 
 // PhoneCallSession 真实电话外呼会话

@@ -3,6 +3,7 @@ import { request } from './request'
 export interface FileItem {
   id: string
   storageId: string
+  storageName?: string
   name: string
   originalName: string
   path: string
@@ -11,8 +12,10 @@ export interface FileItem {
   size?: number
   extension?: string
   contentType?: string
+  /** 0=文件夹 1=文件，与后端 model.FileTypeDir/FileTypeFile 一致 */
   type: number
   createTime?: string
+  updateTime?: string
 }
 
 export interface FileListQuery extends PageParams {
@@ -20,6 +23,7 @@ export interface FileListQuery extends PageParams {
   parentPath?: string
   originalName?: string
   type?: number
+  category?: number
 }
 
 export interface FileStatistics {
@@ -37,11 +41,10 @@ export function getFileStatisticsApi() {
 }
 
 export function uploadFileApi(data: FormData) {
-  return request<{ id: string, url: string }>({
+  return request<{ id: string, url: string, parentPath?: string, path?: string }>({
     url: '/file/upload',
     method: 'post',
     data,
-    headers: { 'Content-Type': 'multipart/form-data' },
   })
 }
 

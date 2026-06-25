@@ -1,4 +1,4 @@
-﻿package database
+package database
 
 import (
 	"context"
@@ -156,6 +156,7 @@ func migrateSys(ctx context.Context, s *store.Stores) error {
 		func() error { return s.SysDict.AutoMigrate(ctx) },
 		func() error { return s.SysStorage.AutoMigrate(ctx) },
 		func() error { return s.SysFile.AutoMigrate(ctx) },
+		func() error { return s.SysFile.RepairDirTypes(ctx) },
 		func() error { return s.OpenApp.AutoMigrate(ctx) },
 		func() error { return s.OpenAPIStat.AutoMigrate(ctx) },
 		func() error { return s.OpenAPIAction.AutoMigrate(ctx) },

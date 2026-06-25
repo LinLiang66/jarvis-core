@@ -1,8 +1,9 @@
-﻿package database
+package database
 
 import (
 	"context"
 	"log"
+	"strings"
 
 	"jarvis-core/backend/internal/model"
 	"jarvis-core/backend/internal/store"
@@ -75,7 +76,14 @@ func ensureMenuPatch(ctx context.Context, s *store.Stores, byPath map[string]mod
 	}
 
 	for _, childTpl := range patch.Children {
-		if _, exists := byPath[childTpl.Path]; exists {
+		if existing, exists := byPath[childTpl.Path]; exists {
+			if strings.TrimSpace(existing.Component) == "" && strings.TrimSpace(childTpl.Component) != "" {
+				existing.Component = childTpl.Component
+				if err := s.SysMenu.Save(ctx, &existing); err != nil {
+					return nil, err
+				}
+				byPath[childTpl.Path] = existing
+			}
 			continue
 		}
 		child := childTpl

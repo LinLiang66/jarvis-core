@@ -73,23 +73,32 @@ func (s *Service) Upload(ctx context.Context, storageID int64, parentPath, origi
 		return nil, err
 	}
 
+	objectKey := strings.TrimLeft(result.ObjectKey, "/")
 	row := &model.SysFile{
 		StorageID:    st.ID,
 		Name:         filepathBase(result.ObjectKey),
 		OriginalName: originalName,
-		Path:         "/" + strings.TrimLeft(result.ObjectKey, "/"),
+		Path:         "/" + objectKey,
 		ParentPath:   parentPath,
-		URL:          result.PublicURL,
+		URL:          NormalizeFileURL(st, result.PublicURL, objectKey),
 		Size:         result.Size,
 		Extension:    ExtName(prepared.FileName),
 		ContentType:  prepared.ContentType,
-		Type:         1,
+		Type:         model.FileTypeFile,
 	}
 	if err := s.stores.SysFile.Create(ctx, row); err != nil {
 		_ = engine.DeleteObject(ctx, result.ObjectKey)
 		return nil, err
 	}
+	row.URL = ResolveFileURL(s.cfg, st, row)
 	return row, nil
+}
+
+func (s *Service) StorageLabel(st *model.SysStorage) string {
+	if st == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s (%s)", st.Name, st.Code)
 }
 
 func (s *Service) CreateDir(ctx context.Context, storageID int64, parentPath, name string) (*model.SysFile, error) {
@@ -102,9 +111,6 @@ func (s *Service) CreateDir(ctx context.Context, storageID int64, parentPath, na
 		return nil, fmt.Errorf("文件夹名称不能为空")
 	}
 	parentPath = NormalizeParentPath(parentPath)
-	if parentPath == "/" {
-		return nil, fmt.Errorf("上级目录不能为空")
-	}
 	if err := s.ensureParentDirs(ctx, st, parentPath); err != nil {
 		return nil, err
 	}
@@ -121,9 +127,9 @@ func (s *Service) CreateDir(ctx context.Context, storageID int64, parentPath, na
 		OriginalName: name,
 		Path:         BuildRelativePath(parentPath, name),
 		ParentPath:   parentPath,
-		Type:         0,
+		Type:         model.FileTypeDir,
 	}
-	if err := s.stores.SysFile.Create(ctx, row); err != nil {
+	if err := s.stores.SysFile.EnsureDir(ctx, row); err != nil {
 		return nil, err
 	}
 	return row, nil
@@ -138,7 +144,7 @@ func (s *Service) DeleteFiles(ctx context.Context, ids []string) error {
 			}
 			return err
 		}
-		if row.Type == 0 {
+		if row.IsDir() {
 			if err := s.deleteDirTree(ctx, row); err != nil {
 				return err
 			}
@@ -156,25 +162,34 @@ func (s *Service) deleteDirTree(ctx context.Context, dir *model.SysFile) error {
 	if err != nil {
 		return err
 	}
-	rows, err := s.stores.SysFile.ListByPathPrefix(ctx, dir.StorageID, dir.Path)
+	dirPath := NormalizeParentPath(dir.Path)
+	rows, err := s.stores.SysFile.ListByPathPrefix(ctx, dir.StorageID, dirPath)
 	if err != nil {
 		return err
 	}
 	engine := NewEngine(s.cfg, st)
 	for _, row := range rows {
-		if row.Type != 1 {
+		if row.IsDir() {
 			continue
 		}
-		if err := engine.DeleteObject(ctx, strings.TrimLeft(row.Path, "/")); err != nil && !osIsNotExist(err) {
+		objectKey := strings.TrimLeft(strings.TrimSpace(row.Path), "/")
+		if objectKey == "" {
+			continue
+		}
+		if err := engine.DeleteObject(ctx, objectKey); err != nil && !osIsNotExist(err) {
 			return err
 		}
 	}
 	if st.Type == model.StorageTypeLocal {
-		s.cleanupLocalDirPrefix(engine, dir.Path)
+		s.cleanupLocalDirPrefix(engine, dirPath)
 	}
-	ids := make([]string, 0, len(rows))
+	idSet := map[string]struct{}{strconv.FormatInt(dir.ID, 10): {}}
 	for _, row := range rows {
-		ids = append(ids, strconv.FormatInt(row.ID, 10))
+		idSet[strconv.FormatInt(row.ID, 10)] = struct{}{}
+	}
+	ids := make([]string, 0, len(idSet))
+	for id := range idSet {
+		ids = append(ids, id)
 	}
 	return s.stores.SysFile.DeleteByIDs(ctx, ids)
 }
@@ -213,22 +228,15 @@ func (s *Service) ensureParentDirs(ctx context.Context, st *model.SysStorage, pa
 			continue
 		}
 		next := BuildRelativePath(current, part)
-		exists, err := s.stores.SysFile.ExistsDir(ctx, st.ID, current, part)
-		if err != nil {
-			return err
+		row := &model.SysFile{
+			StorageID:    st.ID,
+			Name:         part,
+			OriginalName: part,
+			Path:         next,
+			ParentPath:   current,
 		}
-		if !exists {
-			row := &model.SysFile{
-				StorageID:    st.ID,
-				Name:         part,
-				OriginalName: part,
-				Path:         next,
-				ParentPath:   current,
-				Type:         0,
-			}
-			if err := s.stores.SysFile.Create(ctx, row); err != nil {
-				return err
-			}
+		if err := s.stores.SysFile.EnsureDir(ctx, row); err != nil {
+			return err
 		}
 		current = next
 	}

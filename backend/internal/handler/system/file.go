@@ -8,6 +8,7 @@ import (
 	"jarvis-core/backend/internal/config"
 	"jarvis-core/backend/internal/database"
 	"jarvis-core/backend/internal/middleware"
+	"jarvis-core/backend/internal/model"
 	"jarvis-core/backend/internal/pkg/parseid"
 	"jarvis-core/backend/internal/pkg/response"
 	"jarvis-core/backend/internal/pkg/serialize"
@@ -42,10 +43,14 @@ func (h *FileHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
 	storageID, _ := strconv.ParseInt(c.Query("storageId"), 10, 64)
+	category, _ := strconv.Atoi(c.Query("category"))
 	filter := store.SysFileFilter{
 		StorageID:    storageID,
-		ParentPath:   storagesvc.NormalizeParentPath(c.DefaultQuery("parentPath", "/")),
 		OriginalName: c.Query("originalName"),
+		Category:     category,
+	}
+	if category <= 0 {
+		filter.ParentPath = storagesvc.NormalizeParentPath(c.DefaultQuery("parentPath", "/"))
 	}
 	if t := c.Query("type"); t != "" {
 		v, _ := strconv.Atoi(t)
@@ -56,9 +61,20 @@ func (h *FileHandler) List(c *gin.Context) {
 		response.Fail(c, 500, err.Error())
 		return
 	}
+	storageCache := make(map[int64]*model.SysStorage)
 	var out []map[string]any
 	for _, row := range list {
-		out = append(out, serialize.FileDTO(row))
+		st, ok := storageCache[row.StorageID]
+		if !ok {
+			st, err = h.app.Stores.SysStorage.GetByID(c.Request.Context(), row.StorageID)
+			if err != nil {
+				response.Fail(c, 500, err.Error())
+				return
+			}
+			storageCache[row.StorageID] = st
+		}
+		url := storagesvc.ResolveFileURL(h.cfg, st, &row)
+		out = append(out, serialize.FileDTOEnriched(row, url, h.svc.StorageLabel(st)))
 	}
 	response.Page(c, out, int(total), page, size)
 }
@@ -98,9 +114,19 @@ func (h *FileHandler) Upload(c *gin.Context) {
 		response.Fail(c, 500, err.Error())
 		return
 	}
+	st, _ := h.svc.ResolveStorage(c.Request.Context(), storageID)
 	response.OK(c, map[string]any{
-		"id":  serialize.IDStr(row.ID),
-		"url": row.URL,
+		"id":         serialize.IDStr(row.ID),
+		"url":        row.URL,
+		"parentPath": row.ParentPath,
+		"path":       row.Path,
+		"storageId":  serialize.IDStr(row.StorageID),
+		"storageName": func() string {
+			if st != nil {
+				return h.svc.StorageLabel(st)
+			}
+			return ""
+		}(),
 	})
 }
 
@@ -120,7 +146,12 @@ func (h *FileHandler) CreateDir(c *gin.Context) {
 		response.Fail(c, 400, err.Error())
 		return
 	}
-	response.OK(c, serialize.FileDTO(*row))
+	st, err := h.app.Stores.SysStorage.GetByID(c.Request.Context(), row.StorageID)
+	if err != nil {
+		response.Fail(c, 500, err.Error())
+		return
+	}
+	response.OK(c, serialize.FileDTOEnriched(*row, storagesvc.ResolveFileURL(h.cfg, st, row), h.svc.StorageLabel(st)))
 }
 
 func (h *FileHandler) Delete(c *gin.Context) {

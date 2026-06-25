@@ -5,6 +5,7 @@ import type { StorageItem, StorageType, StatusValue } from '@/apis/storage'
 import { ElMessage } from 'element-plus'
 import { createStorageApi, getStorageDetailApi, updateStorageApi } from '@/apis/storage'
 import { useDict } from '@/hooks/useDict'
+import { inputProps, textareaProps } from '@/utils/formField'
 
 defineOptions({ name: 'SystemStorageFormDialog' })
 
@@ -78,28 +79,28 @@ const formRules = computed<FormRules>(() => ({
 
 const formColumns = computed<FormColumnItem[]>(() => {
   const cols: FormColumnItem[] = [
-    { field: 'name', label: '名称', type: 'input' },
-    { field: 'code', label: '编码', type: 'input', props: { disabled: isEdit.value } },
+    { field: 'name', label: '名称', type: 'input', props: inputProps(undefined, 100) },
+    { field: 'code', label: '编码', type: 'input', props: inputProps({ disabled: isEdit.value }, 64) },
   ]
   if (formData.value.type === 2) {
     cols.push(
-      { field: 'accessKey', label: 'Access Key', type: 'input' },
-      { field: 'secretKey', label: 'Secret Key', type: 'input', props: { type: 'password', showPassword: true, placeholder: isEdit.value ? '留空则不修改' : '' } },
-      { field: 'endpoint', label: 'Endpoint', type: 'input' },
-      { field: 'bucketName', label: 'Bucket', type: 'input' },
-      { field: 'baseUrl', label: 'Base URL', type: 'input', props: { placeholder: '内网访问域名，留空则使用 OSS 原始域名' } },
-      { field: 'domain', label: '自定义域名', type: 'input', props: { placeholder: '可选，用于构建原始 URL' } },
+      { field: 'accessKey', label: 'Access Key', type: 'input', props: inputProps() },
+      { field: 'secretKey', label: 'Secret Key', type: 'input', props: inputProps({ type: 'password', showPassword: true, placeholder: isEdit.value ? '留空则不修改' : '' }, 512) },
+      { field: 'endpoint', label: 'Endpoint', type: 'input', props: inputProps({ placeholder: '腾讯云 COS 填 cos.ap-地域.myqcloud.com（勿带 bucket 前缀）' }) },
+      { field: 'bucketName', label: 'Bucket', type: 'input', props: inputProps() },
+      { field: 'baseUrl', label: 'Base URL', type: 'input', props: inputProps({ placeholder: '内网访问域名，留空则使用 OSS 原始域名' }, 512) },
+      { field: 'domain', label: '自定义域名', type: 'input', props: inputProps({ placeholder: '可选，用于构建原始 URL' }, 512) },
     )
   }
   else {
     cols.push(
-      { field: 'bucketName', label: '存储路径', type: 'input', props: { placeholder: '如 ./data/uploads' } },
-      { field: 'domain', label: '访问路径', type: 'input', props: { placeholder: '如 http://127.0.0.1:8000/static/local' } },
+      { field: 'bucketName', label: '存储路径', type: 'input', props: inputProps({ placeholder: '如 ./data/uploads' }) },
+      { field: 'domain', label: '访问路径', type: 'input', props: inputProps({ placeholder: '如 http://127.0.0.1:8000/static/local' }, 512) },
     )
   }
   cols.push(
     { field: 'sort', label: '排序', type: 'input-number', props: { min: 0, controlsPosition: 'right' } },
-    { field: 'description', label: '描述', type: 'textarea', span: 24, props: { rows: 3, maxlength: 500, showWordLimit: true } },
+    { field: 'description', label: '描述', type: 'textarea', span: 24, props: textareaProps({ rows: 3 }) },
     { field: 'status', label: '状态', type: 'radio-group', props: { options: dictData.value.STATUS } },
   )
   return cols
@@ -107,7 +108,7 @@ const formColumns = computed<FormColumnItem[]>(() => {
 
 async function handleBeforeOk() {
   try {
-    await formRef.value?.validate()
+    await formRef.value?.formRef?.validate()
     const payload = { ...formData.value }
     if (isEdit.value && !payload.secretKey) {
       delete (payload as Partial<StorageFormData>).secretKey
@@ -165,16 +166,17 @@ defineExpose({ openAdd, openEdit })
   <gi-dialog
     v-model="visible"
     :title="dialogTitle"
-    width="560px"
+    width="calc(100% - 20px)"
+    :style="{ maxWidth: '600px' }"
     destroy-on-close
     :on-before-ok="handleBeforeOk"
   >
     <gi-form
       ref="formRef"
-      :model-value="formData"
+      v-model="formData"
       :columns="formColumns"
       :rules="formRules"
-      label-width="110px"
+      label-width="90px"
     />
   </gi-dialog>
 </template>

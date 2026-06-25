@@ -1,4 +1,4 @@
-﻿package serialize
+package serialize
 
 import (
 	"strconv"
@@ -165,6 +165,13 @@ func StorageDTO(s model.SysStorage, maskSecret bool) map[string]any {
 	return dto
 }
 
+func fileDTOType(f model.SysFile) int {
+	if f.IsDir() {
+		return model.FileTypeDir
+	}
+	return model.FileTypeFile
+}
+
 func FileDTO(f model.SysFile) map[string]any {
 	return map[string]any{
 		"id":           IDStr(f.ID),
@@ -177,9 +184,21 @@ func FileDTO(f model.SysFile) map[string]any {
 		"size":         f.Size,
 		"extension":    f.Extension,
 		"contentType":  f.ContentType,
-		"type":         f.Type,
+		"type":         fileDTOType(f),
 		"createTime":   FormatTime(f.CreatedAt),
+		"updateTime":   FormatTime(f.UpdatedAt),
 	}
+}
+
+func FileDTOEnriched(f model.SysFile, url, storageName string) map[string]any {
+	dto := FileDTO(f)
+	if url != "" {
+		dto["url"] = url
+	}
+	if storageName != "" {
+		dto["storageName"] = storageName
+	}
+	return dto
 }
 
 // LoginUserDTO POST /auth/login 响应中的 user，字段对齐前端 LoginUser
