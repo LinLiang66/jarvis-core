@@ -96,5 +96,16 @@ func incrementalMenuPatches() []menuPatch {
 				{Type: 2, Title: "调用统计", Name: "调用统计", Path: "/openplatform/stat", Component: "openplatform/stat/index", Permission: "openstat:query", Sort: 4, KeepAlive: true},
 			},
 		},
+		{
+			Dir: model.SysMenu{
+				Type: 1, Title: "系统管理", Name: "系统管理", Path: "/system",
+				Component: "Layout", Redirect: "/system/user", Icon: "Setting",
+				Sort: 10, AlwaysShow: true,
+			},
+			Children: []model.SysMenu{
+				{Type: 2, Title: "存储配置", Name: "存储配置", Path: "/system/storage", Component: "system/storage/index", Permission: "module_system:storage:query", Sort: 5, KeepAlive: true},
+				{Type: 2, Title: "文件管理", Name: "文件管理", Path: "/system/file", Component: "system/file/index", Permission: "module_system:file:query", Sort: 6, KeepAlive: true},
+			},
+		},
 	}
 }

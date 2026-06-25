@@ -1,4 +1,4 @@
-﻿# 架构说明
+# 架构说明
 
 ## 总体架构
 
@@ -13,11 +13,11 @@
                                                  │
                     ┌────────────────────────────┼────────────────────────────┐
                     ▼                            ▼                            ▼
-              MySQL / SQLite                  Redis                         静态文件 / 上传
-         （业务数据）              （登录 token + 开放平台会话 + 统计）      （上传目录）
+              MySQL / SQLite                  Redis                    本地静态 / 对象存储
+         （业务数据）              （登录 token + 开放平台会话 + 统计）   （/static 或 S3 兼容 OSS）
 ```
 
-开放平台多副本部署时，Redis 用于共享 **token/3DES 会话**（键 `open:session:{token}`）及统计同步锁；详见 [开放平台 - 网关集群部署](openplatform.md#网关集群部署jarvis-core-服务端)。
+开放平台多副本部署时，Redis 用于共享 **token/3DES 会话**（键 `open:session:{token}`）及统计同步锁；详见 [开放平台 - 网关集群部署](openplatform.md#网关集群部署jarvis-服务端)。
 
 ## 项目目录
 
@@ -30,7 +30,9 @@ jarvis-core/
 │       ├── router/          # 路由装配
 │       ├── handler/         # HTTP 层（auth、system、openplatform）
 │       ├── middleware/      # JWT、超管
-│       ├── service/openplatform/  # 网关、Action 注册、加解密
+│       ├── service/
+│       │   ├── openplatform/  # 网关、Action 注册、加解密
+│       │   └── storage/       # 本地/OSS 上传、图片压缩、删除
 │       ├── store/           # GORM 仓储
 │       ├── model/           # 实体
 │       └── database/        # 迁移与种子
@@ -78,7 +80,20 @@ jarvis-core/
 | 模块 | 页面 |
 |------|------|
 | 工作台 | 仪表盘 |
-| 系统管理 | 用户、角色、菜单、字典 |
+| 系统管理 | 用户、角色、菜单、字典、存储配置、文件管理 |
 | 开放平台 | 应用、接口、文档、统计 |
 
-种子数据由 `backend/internal/database/seed_sys.go` 写入。
+种子数据由 `backend/internal/database/seed_sys.go` 写入；默认创建本地存储 `local`（见 `seed_storage.go`）。
+
+## 文件与存储
+
+| 能力 | 说明 |
+|------|------|
+| 存储类型 | **本地存储**（磁盘目录 + `/static/{code}/` 访问）与 **对象存储**（S3 兼容 API） |
+| 默认存储 | 首次启动自动创建 `code=local`；上传未指定 `storageId` 时使用默认存储 |
+| OSS Base URL | 对象存储可填内网 `baseUrl`；上传返回 URL 会替换 OSS 域名为该地址（路径不变） |
+| 图片压缩 | JPEG/PNG/WebP/BMP 上传时可选智能压缩（超尺寸缩放、JPEG 质量、仅当体积更小才替换） |
+| 删除文件夹 | 递归删除子目录/文件的数据库记录，并删除本地文件或 OSS 对象，避免脏数据 |
+| 静态访问 | 本地存储：`GET {PUBLIC_BASE_URL}{STATIC_URL_PREFIX}/{code}/...`；生产环境 Nginx 需代理 `/static/` |
+
+存储引擎见 `backend/internal/service/storage/`；管理端页面：`views/system/storage`、`views/system/file`。

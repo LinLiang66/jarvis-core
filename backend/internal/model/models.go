@@ -57,6 +57,8 @@ func defaultPerms() []string {
 		"module_system:role:query", "module_system:role:edit",
 		"module_system:menu:query", "module_system:menu:edit",
 		"module_system:dict:query", "module_system:dict:edit",
+		"module_system:storage:query", "module_system:storage:edit",
+		"module_system:file:query", "module_system:file:edit",
 		"openapp:query", "openapp:edit",
 		"openstat:query", "openaction:query", "openaction:edit",
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -14,6 +15,8 @@ import (
 	openh "jarvis-core/backend/internal/handler/openplatform"
 	"jarvis-core/backend/internal/handler/system"
 	"jarvis-core/backend/internal/middleware"
+	"jarvis-core/backend/internal/model"
+	storagesvc "jarvis-core/backend/internal/service/storage"
 	opsvc "jarvis-core/backend/internal/service/openplatform"
 )
 
@@ -57,7 +60,28 @@ func Setup(cfg *config.Config, app *database.App) *gin.Engine {
 	openAdmin.Register(secured.Group("/open-app"))
 	openh.NewActionHandler(opService).Register(secured.Group("/open-app"))
 	openh.NewDocHandler(opService).Register(secured.Group("/open-app"))
-	system.Register(secured, app)
+	system.Register(secured, app, cfg)
+
+	registerLocalStatic(r, cfg, app)
 
 	return r
+}
+
+func registerLocalStatic(r *gin.Engine, cfg *config.Config, app *database.App) {
+	list, err := app.Stores.SysStorage.List(context.Background(), model.StorageTypeLocal)
+	if err != nil {
+		return
+	}
+	for _, st := range list {
+		if st.Status != "0" {
+			continue
+		}
+		root := strings.TrimSpace(st.BucketName)
+		if root == "" {
+			root = cfg.UploadDir
+		}
+		_ = storagesvc.EnsureLocalDir(root)
+		prefix := strings.TrimRight(cfg.StaticURLPrefix, "/") + "/" + st.Code
+		r.Static(prefix, root)
+	}
 }

@@ -17,9 +17,14 @@ type Config struct {
 	RedisRequired   bool
 	RedisAddr       string
 	LogLevel        string
-	UploadDir       string
-	StaticURLPrefix string
-	PublicBaseURL   string
+	UploadDir              string
+	StaticURLPrefix        string
+	PublicBaseURL          string
+	ImageCompressEnable    bool
+	ImageCompressMaxDim    int
+	ImageCompressQuality   int
+	ImageCompressMinBytes  int
+	ImageCompressMaxInput  int
 }
 
 func Load() *Config {
@@ -34,9 +39,14 @@ func Load() *Config {
 		RedisRequired:   getEnvBool("REDIS_REQUIRED", false),
 		RedisAddr:       getEnv("REDIS_ADDR", "127.0.0.1:6379"),
 		LogLevel:        getEnv("LOG_LEVEL", "info"),
-		UploadDir:       getEnv("UPLOAD_DIR", "./data/uploads"),
-		StaticURLPrefix: getEnv("STATIC_URL_PREFIX", "/static"),
-		PublicBaseURL:   getEnv("PUBLIC_BASE_URL", "http://127.0.0.1:8000"),
+		UploadDir:             getEnv("UPLOAD_DIR", "./data/uploads"),
+		StaticURLPrefix:       getEnv("STATIC_URL_PREFIX", "/static"),
+		PublicBaseURL:         getEnv("PUBLIC_BASE_URL", "http://127.0.0.1:8000"),
+		ImageCompressEnable:   getEnvBool("IMAGE_COMPRESS_ENABLE", true),
+		ImageCompressMaxDim:   getEnvInt("IMAGE_COMPRESS_MAX_DIM", 1920),
+		ImageCompressQuality:  getEnvInt("IMAGE_COMPRESS_QUALITY", 85),
+		ImageCompressMinBytes: getEnvInt("IMAGE_COMPRESS_MIN_BYTES", 100*1024),
+		ImageCompressMaxInput: getEnvInt("IMAGE_COMPRESS_MAX_INPUT", 20*1024*1024),
 	}
 }
 

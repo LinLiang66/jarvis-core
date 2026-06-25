@@ -79,6 +79,40 @@
 | PUT | `/data/:id/status` | 更新状态 |
 | POST | `/data/delete` | 删除字典项 |
 
+### 存储配置 `/storage`
+
+> 需超级管理员
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/list` | 列表（`type`：1 本地，2 对象存储） |
+| GET | `/:id` | 详情 |
+| POST | `` | 新增 |
+| PUT | `/:id` | 更新 |
+| PUT | `/:id/status` | 启用/禁用 |
+| PUT | `/:id/default` | 设为默认存储 |
+| POST | `/delete` | 批量删除 |
+
+对象存储字段含 `accessKey`、`secretKey`、`endpoint`、`bucketName`、`baseUrl`（内网访问域名，可选）、`domain`（自定义域名，可选）。
+
+### 文件管理 `/file`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/list` | 分页列表（`parentPath`、`storageId`、`originalName`） |
+| GET | `/statistics` | 文件/目录数量与总大小 |
+| POST | `/upload` | 上传（`multipart/form-data`：`file`、可选 `parentPath`、`storageId`） |
+| POST | `/dir` | 创建文件夹（JSON：`parentPath`、`originalName`） |
+| POST | `/delete` | 批量删除（超管；删文件夹会递归删子项及 OSS/本地对象） |
+
+上传图片时若开启 `IMAGE_COMPRESS_*`，服务端自动压缩后再写入存储。
+
+## 静态资源
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/static/{storageCode}/*` | 本地存储文件（无需 JWT） |
+
 ## 开放平台管理 `/api/v1/open-app`
 
 > 需管理端登录

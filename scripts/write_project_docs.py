@@ -21,7 +21,7 @@ def write(rel: str, content: str) -> None:
 
 DOCS_INDEX = """# 项目文档
 
-jarvis-core 是一套前后端分离的管理后台基础框架，内置 **系统管理**（用户 / 角色 / 菜单 / 字典）与 **开放平台**（网关、应用、接口文档、调用统计），可作为业务系统的起点快速扩展。
+jarvis-core 是一套前后端分离的管理后台基础框架，内置 **系统管理**（用户 / 角色 / 菜单 / 字典 / 存储配置 / 文件管理）与 **开放平台**（网关、应用、接口文档、调用统计），可作为业务系统的起点快速扩展。
 
 ## 文档目录
 
@@ -89,7 +89,24 @@ go run ./cmd/server
 - 默认监听 `:8000`
 - 健康检查：`GET http://localhost:8000/health`
 - 未配置 MySQL 时使用 SQLite：`backend/data/app.db`
-- 首次启动自动建表并写入种子数据
+- 首次启动自动建表并写入种子数据（含默认本地存储 `code=local`）
+
+### 文件存储相关环境变量
+
+在 `backend/.env` 中可配置（完整列表见 `backend/.env.example`）：
+
+| 变量 | 说明 | 默认 |
+|------|------|------|
+| `UPLOAD_DIR` | 本地存储根目录（默认存储路径） | `./data/uploads` |
+| `STATIC_URL_PREFIX` | 本地文件 HTTP 前缀 | `/static` |
+| `PUBLIC_BASE_URL` | 对外访问基址（拼接文件 URL） | `http://127.0.0.1:8000` |
+| `IMAGE_COMPRESS_ENABLE` | 上传图片是否智能压缩 | `true` |
+| `IMAGE_COMPRESS_MAX_DIM` | 图片最长边上限（像素） | `1920` |
+| `IMAGE_COMPRESS_QUALITY` | JPEG 压缩质量 1–100 | `85` |
+| `IMAGE_COMPRESS_MIN_BYTES` | 小于该字节数不压缩 | `102400` |
+| `IMAGE_COMPRESS_MAX_INPUT` | 参与压缩的单文件上限 | `20971520` |
+
+对象存储（OSS）在管理端 **系统管理 → 存储配置** 中维护，支持 S3 兼容服务（阿里云 OSS、腾讯云 COS、MinIO 等）；可配置 **Base URL** 将返回链接域名替换为内网地址以节省公网流量。
 
 ### 使用 MySQL（推荐）
 
@@ -176,8 +193,8 @@ ARCHITECTURE = """# 架构说明
                                                  │
                     ┌────────────────────────────┼────────────────────────────┐
                     ▼                            ▼                            ▼
-              MySQL / SQLite                  Redis                         静态文件 / 上传
-         （业务数据）              （登录 token + 开放平台会话 + 统计）      （上传目录）
+              MySQL / SQLite                  Redis                    本地静态 / 对象存储
+         （业务数据）              （登录 token + 开放平台会话 + 统计）   （/static 或 S3 兼容 OSS）
 ```
 
 开放平台多副本部署时，Redis 用于共享 **token/3DES 会话**（键 `open:session:{token}`）及统计同步锁；详见 [开放平台 - 网关集群部署](openplatform.md#网关集群部署jarvis-服务端)。
@@ -193,7 +210,9 @@ jarvis-core/
 │       ├── router/          # 路由装配
 │       ├── handler/         # HTTP 层（auth、system、openplatform）
 │       ├── middleware/      # JWT、超管
-│       ├── service/openplatform/  # 网关、Action 注册、加解密
+│       ├── service/
+│       │   ├── openplatform/  # 网关、Action 注册、加解密
+│       │   └── storage/       # 本地/OSS 上传、图片压缩、删除
 │       ├── store/           # GORM 仓储
 │       ├── model/           # 实体
 │       └── database/        # 迁移与种子
@@ -241,10 +260,23 @@ jarvis-core/
 | 模块 | 页面 |
 |------|------|
 | 工作台 | 仪表盘 |
-| 系统管理 | 用户、角色、菜单、字典 |
+| 系统管理 | 用户、角色、菜单、字典、存储配置、文件管理 |
 | 开放平台 | 应用、接口、文档、统计 |
 
-种子数据由 `backend/internal/database/seed_sys.go` 写入。
+种子数据由 `backend/internal/database/seed_sys.go` 写入；默认创建本地存储 `local`（见 `seed_storage.go`）。
+
+## 文件与存储
+
+| 能力 | 说明 |
+|------|------|
+| 存储类型 | **本地存储**（磁盘目录 + `/static/{code}/` 访问）与 **对象存储**（S3 兼容 API） |
+| 默认存储 | 首次启动自动创建 `code=local`；上传未指定 `storageId` 时使用默认存储 |
+| OSS Base URL | 对象存储可填内网 `baseUrl`；上传返回 URL 会替换 OSS 域名为该地址（路径不变） |
+| 图片压缩 | JPEG/PNG/WebP/BMP 上传时可选智能压缩（超尺寸缩放、JPEG 质量、仅当体积更小才替换） |
+| 删除文件夹 | 递归删除子目录/文件的数据库记录，并删除本地文件或 OSS 对象，避免脏数据 |
+| 静态访问 | 本地存储：`GET {PUBLIC_BASE_URL}{STATIC_URL_PREFIX}/{code}/...`；生产环境 Nginx 需代理 `/static/` |
+
+存储引擎见 `backend/internal/service/storage/`；管理端页面：`views/system/storage`、`views/system/file`。
 """
 
 API_REFERENCE = """# API 参考
@@ -327,6 +359,40 @@ API_REFERENCE = """# API 参考
 | PUT | `/data/:id` | 更新字典项 |
 | PUT | `/data/:id/status` | 更新状态 |
 | POST | `/data/delete` | 删除字典项 |
+
+### 存储配置 `/storage`
+
+> 需超级管理员
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/list` | 列表（`type`：1 本地，2 对象存储） |
+| GET | `/:id` | 详情 |
+| POST | `` | 新增 |
+| PUT | `/:id` | 更新 |
+| PUT | `/:id/status` | 启用/禁用 |
+| PUT | `/:id/default` | 设为默认存储 |
+| POST | `/delete` | 批量删除 |
+
+对象存储字段含 `accessKey`、`secretKey`、`endpoint`、`bucketName`、`baseUrl`（内网访问域名，可选）、`domain`（自定义域名，可选）。
+
+### 文件管理 `/file`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/list` | 分页列表（`parentPath`、`storageId`、`originalName`） |
+| GET | `/statistics` | 文件/目录数量与总大小 |
+| POST | `/upload` | 上传（`multipart/form-data`：`file`、可选 `parentPath`、`storageId`） |
+| POST | `/dir` | 创建文件夹（JSON：`parentPath`、`originalName`） |
+| POST | `/delete` | 批量删除（超管；删文件夹会递归删子项及 OSS/本地对象） |
+
+上传图片时若开启 `IMAGE_COMPRESS_*`，服务端自动压缩后再写入存储。
+
+## 静态资源
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/static/{storageCode}/*` | 本地存储文件（无需 JWT） |
 
 ## 开放平台管理 `/api/v1/open-app`
 
@@ -716,7 +782,9 @@ Linux 可使用 `run_linux.sh`；Windows 使用 `run_win.bat`（自动复制 `.e
 - [ ] 设置强随机 `JWT_SECRET`
 - [ ] 使用 MySQL 而非 SQLite
 - [ ] **网关多副本**：Redis 启用且各 Pod 指向同一实例（开放平台会话必需，见 [openplatform.md](openplatform.md)）
-- [ ] 配置 `PUBLIC_BASE_URL` 为真实域名
+- [ ] 配置 `PUBLIC_BASE_URL` 为真实域名（影响本地存储文件 URL 与默认存储访问路径）
+- [ ] 使用对象存储时配置正确的 S3 Endpoint；内网访问可设 `baseUrl`
+- [ ] Nginx 代理 `/static/` 至后端（本地文件访问）
 - [ ] 前端 `VITE_BASE` 与 Nginx 路径一致
 - [ ] 勿将 `backend/.env`、`docker/.env` 提交到版本库
 - [ ] **业务侧多实例调用开放平台**：调用方实现 Redis 共享会话与握手分布式锁（见 [openplatform.md#调用方集群部署](openplatform.md#调用方集群部署业务系统--sdk)）
@@ -748,7 +816,7 @@ DEVELOPMENT = """# 开发指南
 3. **API 封装**：在 `frontend/web/src/apis/` 增加接口函数
 4. **角色授权**：为角色分配新菜单
 
-列表页可参考现有 `views/system/user/index.vue`（GiTable + FormDialog）。
+列表页可参考 `views/system/user/index.vue`（GiTable + FormDialog）；存储与文件管理见 `views/system/storage`、`views/system/file`。
 
 ## 新增 REST 模块
 
@@ -820,7 +888,8 @@ ROOT_README = """# jarvis-core
 ## 特性
 
 - RBAC 权限、动态菜单路由、JWT 登录
-- 用户 / 角色 / 菜单 / 字典管理
+- 用户 / 角色 / 菜单 / 字典 / 存储配置 / 文件管理
+- 本地存储 + S3 兼容对象存储、图片智能压缩、文件夹递归删除
 - 开放平台：统一网关、应用管理、接口文档、调用统计
 - Vue 3 + Element Plus + gi-component 管理界面
 - Go + Gin + GORM，MySQL / SQLite 双模式
@@ -892,7 +961,8 @@ go run ./cmd/server
 | 模块 | 路径前缀 |
 |------|----------|
 | 认证 | `/api/v1/auth` |
-| 系统管理 | `/api/v1/system/*` |
+| 系统管理 | `/api/v1/user`、`/role`、`/menu`、`/dict`、`/storage`、`/file` 等 |
+| 静态文件 | `/static/{storageCode}/` |
 | 开放平台网关 | `/api/v1/open/gateway` |
 | 开放平台管理 | `/api/v1/open-app/*` |
 
@@ -905,6 +975,8 @@ go run ./cmd/server
 | `MYSQL_HOST` / `MYSQL_DATABASE` | 配置后使用 MySQL |
 | `JWT_SECRET` | JWT 密钥（生产必改） |
 | `REDIS_ENABLE` | 是否启用 Redis（**网关集群 + 开放平台会话强烈建议 true**） |
+| `UPLOAD_DIR` / `PUBLIC_BASE_URL` | 本地存储目录与对外 URL 基址 |
+| `IMAGE_COMPRESS_*` | 上传图片智能压缩（本地与 OSS 均生效） |
 
 完整说明见 [docs/getting-started.md](../docs/getting-started.md) 与 [docs/api-reference.md](../docs/api-reference.md)。
 
@@ -957,7 +1029,7 @@ pnpm dev
 ```text
 src/views/
 ├── dashboard/       # 工作台
-├── system/          # 用户、角色、菜单、字典
+├── system/          # 用户、角色、菜单、字典、存储、文件
 ├── openplatform/    # 应用、接口、文档、统计
 └── login/           # 登录
 ```

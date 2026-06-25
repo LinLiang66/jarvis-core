@@ -142,6 +142,8 @@ func seedMenuTree(createDir func(m model.SysMenu, children []model.SysMenu) erro
 			{Type: 2, Title: "角色管理", Path: "/system/role", Component: "system/role/index", Permission: "module_system:role:query", Sort: 2, KeepAlive: true},
 			{Type: 2, Title: "菜单管理", Path: "/system/menu", Component: "system/menu/index", Permission: "module_system:menu:query", Sort: 3, KeepAlive: true},
 			{Type: 2, Title: "字典管理", Path: "/system/dict", Component: "system/dict/index", Permission: "module_system:dict:query", Sort: 4, KeepAlive: true},
+			{Type: 2, Title: "存储配置", Path: "/system/storage", Component: "system/storage/index", Permission: "module_system:storage:query", Sort: 5, KeepAlive: true},
+			{Type: 2, Title: "文件管理", Path: "/system/file", Component: "system/file/index", Permission: "module_system:file:query", Sort: 6, KeepAlive: true},
 		},
 	)
 }
@@ -152,6 +154,8 @@ func migrateSys(ctx context.Context, s *store.Stores) error {
 		s.SysRole.AutoMigrate(ctx),
 		s.SysMenu.AutoMigrate(ctx),
 		s.SysDict.AutoMigrate(ctx),
+		s.SysStorage.AutoMigrate(ctx),
+		s.SysFile.AutoMigrate(ctx),
 		s.OpenApp.AutoMigrate(ctx),
 		s.OpenAPIStat.AutoMigrate(ctx),
 		s.OpenAPIAction.AutoMigrate(ctx),

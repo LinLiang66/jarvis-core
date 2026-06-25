@@ -34,7 +34,7 @@ pnpm dev
 ```text
 src/views/
 ├── dashboard/       # 工作台
-├── system/          # 用户、角色、菜单、字典
+├── system/          # 用户、角色、菜单、字典、存储、文件
 ├── openplatform/    # 应用、接口、文档、统计
 └── login/           # 登录
 ```

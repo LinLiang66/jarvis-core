@@ -137,6 +137,51 @@ func DictOption(label, value string) map[string]string {
 	return map[string]string{"label": label, "value": value}
 }
 
+func StorageDTO(s model.SysStorage, maskSecret bool) map[string]any {
+	dto := map[string]any{
+		"id":          IDStr(s.ID),
+		"name":        s.Name,
+		"code":        s.Code,
+		"type":        s.Type,
+		"accessKey":   s.AccessKey,
+		"endpoint":    s.Endpoint,
+		"bucketName":  s.BucketName,
+		"baseUrl":     s.BaseURL,
+		"domain":      s.Domain,
+		"description": s.Description,
+		"isDefault":   s.IsDefault,
+		"sort":        s.Sort,
+		"status":      s.Status,
+		"createTime":  FormatTime(s.CreatedAt),
+		"updateTime":  FormatTime(s.UpdatedAt),
+	}
+	if maskSecret {
+		if s.SecretKey != "" {
+			dto["secretKey"] = "******"
+		} else {
+			dto["secretKey"] = ""
+		}
+	}
+	return dto
+}
+
+func FileDTO(f model.SysFile) map[string]any {
+	return map[string]any{
+		"id":           IDStr(f.ID),
+		"storageId":    IDStr(f.StorageID),
+		"name":         f.Name,
+		"originalName": f.OriginalName,
+		"path":         f.Path,
+		"parentPath":   f.ParentPath,
+		"url":          f.URL,
+		"size":         f.Size,
+		"extension":    f.Extension,
+		"contentType":  f.ContentType,
+		"type":         f.Type,
+		"createTime":   FormatTime(f.CreatedAt),
+	}
+}
+
 // LoginUserDTO POST /auth/login 响应中的 user，字段对齐前端 LoginUser
 func LoginUserDTO(u model.SysUser, isSuperuser bool) map[string]any {
 	dto := map[string]any{

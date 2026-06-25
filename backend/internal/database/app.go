@@ -34,7 +34,11 @@ func Open(ctx context.Context, cfg *config.Config) (*App, error) {
 	if err := migrateAll(ctx, stores); err != nil {
 		return nil, err
 	}
+	ensureUploadDir(cfg)
 	if err := seedSystem(ctx, stores); err != nil {
+		return nil, err
+	}
+	if err := seedDefaultStorage(ctx, cfg, stores); err != nil {
 		return nil, err
 	}
 

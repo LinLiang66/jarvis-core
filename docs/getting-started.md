@@ -1,4 +1,4 @@
-﻿# 快速开始
+# 快速开始
 
 ## 环境要求
 
@@ -29,7 +29,24 @@ go run ./cmd/server
 - 默认监听 `:8000`
 - 健康检查：`GET http://localhost:8000/health`
 - 未配置 MySQL 时使用 SQLite：`backend/data/app.db`
-- 首次启动自动建表并写入种子数据
+- 首次启动自动建表并写入种子数据（含默认本地存储 `code=local`）
+
+### 文件存储相关环境变量
+
+在 `backend/.env` 中可配置（完整列表见 `backend/.env.example`）：
+
+| 变量 | 说明 | 默认 |
+|------|------|------|
+| `UPLOAD_DIR` | 本地存储根目录（默认存储路径） | `./data/uploads` |
+| `STATIC_URL_PREFIX` | 本地文件 HTTP 前缀 | `/static` |
+| `PUBLIC_BASE_URL` | 对外访问基址（拼接文件 URL） | `http://127.0.0.1:8000` |
+| `IMAGE_COMPRESS_ENABLE` | 上传图片是否智能压缩 | `true` |
+| `IMAGE_COMPRESS_MAX_DIM` | 图片最长边上限（像素） | `1920` |
+| `IMAGE_COMPRESS_QUALITY` | JPEG 压缩质量 1–100 | `85` |
+| `IMAGE_COMPRESS_MIN_BYTES` | 小于该字节数不压缩 | `102400` |
+| `IMAGE_COMPRESS_MAX_INPUT` | 参与压缩的单文件上限 | `20971520` |
+
+对象存储（OSS）在管理端 **系统管理 → 存储配置** 中维护，支持 S3 兼容服务（阿里云 OSS、腾讯云 COS、MinIO 等）；可配置 **Base URL** 将返回链接域名替换为内网地址以节省公网流量。
 
 ### 使用 MySQL（推荐）
 

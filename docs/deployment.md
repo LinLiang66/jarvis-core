@@ -1,4 +1,4 @@
-﻿# 部署指南
+# 部署指南
 
 ## Docker 部署（仅后端）
 
@@ -90,7 +90,9 @@ Linux 可使用 `run_linux.sh`；Windows 使用 `run_win.bat`（自动复制 `.e
 - [ ] 设置强随机 `JWT_SECRET`
 - [ ] 使用 MySQL 而非 SQLite
 - [ ] **网关多副本**：Redis 启用且各 Pod 指向同一实例（开放平台会话必需，见 [openplatform.md](openplatform.md)）
-- [ ] 配置 `PUBLIC_BASE_URL` 为真实域名
+- [ ] 配置 `PUBLIC_BASE_URL` 为真实域名（影响本地存储文件 URL 与默认存储访问路径）
+- [ ] 使用对象存储时配置正确的 S3 Endpoint；内网访问可设 `baseUrl`
+- [ ] Nginx 代理 `/static/` 至后端（本地文件访问）
 - [ ] 前端 `VITE_BASE` 与 Nginx 路径一致
 - [ ] 勿将 `backend/.env`、`docker/.env` 提交到版本库
 - [ ] **业务侧多实例调用开放平台**：调用方实现 Redis 共享会话与握手分布式锁（见 [openplatform.md#调用方集群部署](openplatform.md#调用方集群部署业务系统--sdk)）

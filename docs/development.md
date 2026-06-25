@@ -24,7 +24,7 @@
 3. **API 封装**：在 `frontend/web/src/apis/` 增加接口函数
 4. **角色授权**：为角色分配新菜单
 
-列表页可参考现有 `views/system/user/index.vue`（GiTable + FormDialog）。
+列表页可参考 `views/system/user/index.vue`（GiTable + FormDialog）；存储与文件管理见 `views/system/storage`、`views/system/file`。
 
 ## 新增 REST 模块
 
