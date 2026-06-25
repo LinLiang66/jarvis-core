@@ -9,20 +9,19 @@ import (
 	"jarvis-core/backend/internal/store"
 )
 
-func seedSystem(ctx context.Context, s *store.Stores) error {
-	if err := migrateSys(ctx, s); err != nil {
+func seedSystemRequired(ctx context.Context, s *store.Stores) error {
+	var userN int64
+	if err := s.SysUser.DB.WithContext(ctx).Model(&model.SysUser{}).Limit(1).Count(&userN).Error; err != nil {
 		return err
 	}
-	if err := seedIncrementalMenus(ctx, s); err != nil {
-		return err
-	}
-	var userN, menuN int64
-	s.SysUser.DB.WithContext(ctx).Model(&model.SysUser{}).Count(&userN)
-	s.SysMenu.DB.WithContext(ctx).Model(&model.SysMenu{}).Count(&menuN)
-	if userN > 0 && menuN > 0 {
+	if userN > 0 {
 		return nil
 	}
-	if userN > 0 && menuN == 0 {
+	var menuN int64
+	if err := s.SysMenu.DB.WithContext(ctx).Model(&model.SysMenu{}).Limit(1).Count(&menuN).Error; err != nil {
+		return err
+	}
+	if menuN > 0 {
 		return seedMenusOnly(ctx, s)
 	}
 	hash, _ := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
@@ -149,16 +148,20 @@ func seedMenuTree(createDir func(m model.SysMenu, children []model.SysMenu) erro
 }
 
 func migrateSys(ctx context.Context, s *store.Stores) error {
-	if err := errorsJoin(
-		s.SysUser.AutoMigrate(ctx),
-		s.SysRole.AutoMigrate(ctx),
-		s.SysMenu.AutoMigrate(ctx),
-		s.SysDict.AutoMigrate(ctx),
-		s.SysStorage.AutoMigrate(ctx),
-		s.SysFile.AutoMigrate(ctx),
-		s.OpenApp.AutoMigrate(ctx),
-		s.OpenAPIStat.AutoMigrate(ctx),
-		s.OpenAPIAction.AutoMigrate(ctx),
+	db := s.SysUser.DB.WithContext(ctx)
+	if err := db.AutoMigrate(
+		&model.SysUser{},
+		&model.SysRole{},
+		&model.SysMenu{},
+		&model.SysDictType{},
+		&model.SysDictData{},
+		&model.SysStorage{},
+		&model.SysFile{},
+		&model.OpenApp{},
+		&model.OpenAPICallLog{},
+		&model.OpenAPIDailyStat{},
+		&model.OpenAPIHourlySyncLog{},
+		&model.OpenAPIAction{},
 	); err != nil {
 		return err
 	}

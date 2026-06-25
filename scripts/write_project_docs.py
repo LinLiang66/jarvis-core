@@ -105,8 +105,20 @@ go run ./cmd/server
 | `IMAGE_COMPRESS_QUALITY` | JPEG 压缩质量 1–100 | `85` |
 | `IMAGE_COMPRESS_MIN_BYTES` | 小于该字节数不压缩 | `102400` |
 | `IMAGE_COMPRESS_MAX_INPUT` | 参与压缩的单文件上限 | `20971520` |
+| `DB_AUTO_MIGRATE` | 启动时是否 AutoMigrate（生产稳定库可设 `false`） | `true` |
 
 对象存储（OSS）在管理端 **系统管理 → 存储配置** 中维护，支持 S3 兼容服务（阿里云 OSS、腾讯云 COS、MinIO 等）；可配置 **Base URL** 将返回链接域名替换为内网地址以节省公网流量。
+
+### 启动性能
+
+启动日志会输出 `[startup] ready in ...` 及各阶段耗时。优化策略：
+
+- MySQL 与 Redis **并行连接**
+- **单次** AutoMigrate（合并多表），避免重复迁移
+- 增量菜单、默认存储种子 **后台异步** 执行
+- 增量菜单补丁 **快速跳过**（路径已存在则不再全表扫描）
+- Schema 补丁 **幂等检测**，避免每次 `ALTER TABLE`
+- 生产环境可设 `DB_AUTO_MIGRATE=false` 跳过迁移以进一步加速
 
 ### 使用 MySQL（推荐）
 

@@ -13,8 +13,17 @@ type menuPatch struct {
 	Children []model.SysMenu
 }
 
-// seedIncrementalMenus 按路由 path 增量补全菜单（旧库升级时使用）
+// seedIncrementalMenus 按路由 path 增量补全菜单（旧库升级时使用，启动后后台执行）。
 func seedIncrementalMenus(ctx context.Context, s *store.Stores) error {
+	paths := incrementalMenuPatchPaths()
+	upToDate, err := incrementalMenusApplied(ctx, s, paths)
+	if err != nil {
+		return err
+	}
+	if upToDate {
+		return nil
+	}
+
 	all, err := s.SysMenu.All(ctx)
 	if err != nil {
 		return err
@@ -79,6 +88,30 @@ func ensureMenuPatch(ctx context.Context, s *store.Stores, byPath map[string]mod
 		newIDs = append(newIDs, child.ID)
 	}
 	return newIDs, nil
+}
+
+func incrementalMenuPatchPaths() []string {
+	var paths []string
+	for _, patch := range incrementalMenuPatches() {
+		if patch.Dir.Path != "" {
+			paths = append(paths, patch.Dir.Path)
+		}
+		for _, child := range patch.Children {
+			if child.Path != "" {
+				paths = append(paths, child.Path)
+			}
+		}
+	}
+	return paths
+}
+
+func incrementalMenusApplied(ctx context.Context, s *store.Stores, paths []string) (bool, error) {
+	if len(paths) == 0 {
+		return true, nil
+	}
+	var n int64
+	err := s.SysMenu.DB.WithContext(ctx).Model(&model.SysMenu{}).Where("path IN ?", paths).Count(&n).Error
+	return n >= int64(len(paths)), err
 }
 
 func incrementalMenuPatches() []menuPatch {

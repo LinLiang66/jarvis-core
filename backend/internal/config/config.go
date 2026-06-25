@@ -25,6 +25,7 @@ type Config struct {
 	ImageCompressQuality   int
 	ImageCompressMinBytes  int
 	ImageCompressMaxInput  int
+	DBAutoMigrate          bool
 }
 
 func Load() *Config {
@@ -47,6 +48,7 @@ func Load() *Config {
 		ImageCompressQuality:  getEnvInt("IMAGE_COMPRESS_QUALITY", 85),
 		ImageCompressMinBytes: getEnvInt("IMAGE_COMPRESS_MIN_BYTES", 100*1024),
 		ImageCompressMaxInput: getEnvInt("IMAGE_COMPRESS_MAX_INPUT", 20*1024*1024),
+		DBAutoMigrate:         getEnvBool("DB_AUTO_MIGRATE", true),
 	}
 }
 

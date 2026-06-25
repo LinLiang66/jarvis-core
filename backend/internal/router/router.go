@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -47,11 +48,15 @@ func Setup(cfg *config.Config, app *database.App) *gin.Engine {
 
 	opService := opsvc.NewService(app.Stores.OpenApp, app.Stores.OpenAPIStat, app.Stores.OpenAPIAction, opStatStore, opQuotaStore, opSession)
 
-	if n, err := opService.SyncActionRegistry(context.Background()); err != nil {
-		log.Printf("[openplatform] action registry sync failed: %v", err)
-	} else {
-		log.Printf("[openplatform] action registry synced: %d actions", n)
-	}
+	go func() {
+		t := time.Now()
+		n, err := opService.SyncActionRegistry(context.Background())
+		if err != nil {
+			log.Printf("[openplatform] action registry sync failed: %v", err)
+			return
+		}
+		log.Printf("[openplatform] action registry synced: %d actions in %v", n, time.Since(t))
+	}()
 	openh.NewGatewayHandler(opService).Register(api.Group("/open"))
 
 	secured := api.Group("")

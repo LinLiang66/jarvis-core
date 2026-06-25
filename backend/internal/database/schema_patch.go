@@ -14,13 +14,37 @@ func applySchemaPatches(ctx context.Context, db *gorm.DB) error {
 	}
 	dialector := db.Dialector.Name()
 	if dialector == "mysql" {
+		var dataType string
+		err := db.WithContext(ctx).Raw(`
+			SELECT DATA_TYPE FROM information_schema.COLUMNS
+			WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menus' AND COLUMN_NAME = 'icon'
+			LIMIT 1
+		`).Scan(&dataType).Error
+		if err != nil {
+			return err
+		}
+		switch strings.ToLower(dataType) {
+		case "text", "longtext", "mediumtext":
+			return nil
+		}
 		return db.WithContext(ctx).Exec("ALTER TABLE sys_menus MODIFY COLUMN icon TEXT").Error
 	}
 	if dialector == "postgres" {
+		var dataType string
+		err := db.WithContext(ctx).Raw(`
+			SELECT data_type FROM information_schema.columns
+			WHERE table_schema = current_schema() AND table_name = 'sys_menus' AND column_name = 'icon'
+			LIMIT 1
+		`).Scan(&dataType).Error
+		if err != nil {
+			return err
+		}
+		if strings.EqualFold(dataType, "text") {
+			return nil
+		}
 		return db.WithContext(ctx).Exec("ALTER TABLE sys_menus ALTER COLUMN icon TYPE TEXT").Error
 	}
 	if strings.Contains(dialector, "sqlite") {
-		// SQLite 字符串列本身无长度限制，AutoMigrate 已足够。
 		return nil
 	}
 	return nil
