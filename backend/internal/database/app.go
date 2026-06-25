@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"time"
+	"sync"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -29,16 +29,43 @@ func Open(ctx context.Context, cfg *config.Config) (*App, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	prof := newStartupProfiler()
+	boot := newBootTimer()
 
-	t := time.Now()
 	db, driver, err := openGORM(cfg)
 	if err != nil {
 		return nil, err
 	}
-	prof.step("mysql", t)
+	boot.mark("mysql_connect")
 
 	stores := store.NewStores(db)
+	ensureUploadDir(cfg)
+
+	var migrateErr error
+	var rdb *infraredis.Client
+	var redisErr error
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		if !cfg.DBAutoMigrate {
+			return
+		}
+		migrateErr = migrateAll(ctx, stores)
+	}()
+	go func() {
+		defer wg.Done()
+		if !cfg.RedisEnable {
+			return
+		}
+		rdb, redisErr = infraredis.InitWithContext(ctx, infraredis.ConfigFromEnv())
+	}()
+	wg.Wait()
+	boot.mark("migrate_and_redis_parallel")
+
+	if migrateErr != nil {
+		return nil, migrateErr
+	}
+
 	app := &App{
 		DB:      db,
 		Stores:  stores,
@@ -46,69 +73,38 @@ func Open(ctx context.Context, cfg *config.Config) (*App, error) {
 		Session: store.NewSessionCache(nil, cfg.JWTExpire),
 	}
 
-	type redisResult struct {
-		client *infraredis.Client
-		err    error
-	}
-	redisCh := make(chan redisResult, 1)
 	if cfg.RedisEnable {
-		go func() {
-			rt := time.Now()
-			rdb, err := infraredis.InitWithContext(ctx, infraredis.ConfigFromEnv())
-			prof.step("redis", rt)
-			redisCh <- redisResult{client: rdb, err: err}
-		}()
-	} else {
-		close(redisCh)
-	}
-
-	t = time.Now()
-	if cfg.DBAutoMigrate {
-		if err := migrateAll(ctx, stores); err != nil {
-			return nil, err
-		}
-	}
-	prof.step("migrate", t)
-
-	t = time.Now()
-	ensureUploadDir(cfg)
-	if err := seedSystemRequired(ctx, stores); err != nil {
-		return nil, err
-	}
-	prof.step("seed", t)
-
-	if cfg.RedisEnable {
-		res := <-redisCh
-		if res.err != nil {
+		if redisErr != nil {
 			if cfg.RedisRequired {
-				return nil, fmt.Errorf("redis init: %w", res.err)
+				return nil, fmt.Errorf("redis init: %w", redisErr)
 			}
-			log.Printf("[warn] redis unavailable: %v", res.err)
+			log.Printf("[warn] redis unavailable: %v", redisErr)
 		} else {
-			app.Redis = res.client
-			app.Session = store.NewSessionCache(res.client, cfg.JWTExpire)
+			app.Redis = rdb
+			app.Session = store.NewSessionCache(rdb, cfg.JWTExpire)
 			log.Printf("redis connected: %s", infraredis.ConfigFromEnv().Addr)
 		}
 	}
 
-	startBackgroundSeed(cfg, stores)
-	prof.finish()
-	return app, nil
-}
+	syncSeed, err := needsSyncSeed(ctx, stores)
+	if err != nil {
+		return nil, err
+	}
+	if syncSeed {
+		if err := seedSystem(ctx, stores); err != nil {
+			return nil, err
+		}
+		if err := seedDefaultStorage(ctx, cfg, stores); err != nil {
+			return nil, err
+		}
+		boot.mark("seed_sync")
+	} else {
+		startBackgroundSeed(cfg, stores)
+		boot.mark("seed_async")
+	}
 
-func startBackgroundSeed(cfg *config.Config, s *store.Stores) {
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		defer cancel()
-		t := time.Now()
-		if err := seedIncrementalMenus(ctx, s); err != nil {
-			log.Printf("[seed] incremental menus: %v", err)
-		}
-		if err := seedDefaultStorage(ctx, cfg, s); err != nil {
-			log.Printf("[seed] default storage: %v", err)
-		}
-		log.Printf("[startup] background-seed done in %v", time.Since(t))
-	}()
+	boot.summary()
+	return app, nil
 }
 
 func openGORM(cfg *config.Config) (*gorm.DB, string, error) {

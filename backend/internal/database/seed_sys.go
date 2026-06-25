@@ -2,6 +2,7 @@
 
 import (
 	"context"
+	"sync"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -9,7 +10,7 @@ import (
 	"jarvis-core/backend/internal/store"
 )
 
-func seedSystemRequired(ctx context.Context, s *store.Stores) error {
+func seedSystem(ctx context.Context, s *store.Stores) error {
 	var userN int64
 	if err := s.SysUser.DB.WithContext(ctx).Model(&model.SysUser{}).Limit(1).Count(&userN).Error; err != nil {
 		return err
@@ -148,22 +149,35 @@ func seedMenuTree(createDir func(m model.SysMenu, children []model.SysMenu) erro
 }
 
 func migrateSys(ctx context.Context, s *store.Stores) error {
-	db := s.SysUser.DB.WithContext(ctx)
-	if err := db.AutoMigrate(
-		&model.SysUser{},
-		&model.SysRole{},
-		&model.SysMenu{},
-		&model.SysDictType{},
-		&model.SysDictData{},
-		&model.SysStorage{},
-		&model.SysFile{},
-		&model.OpenApp{},
-		&model.OpenAPICallLog{},
-		&model.OpenAPIDailyStat{},
-		&model.OpenAPIHourlySyncLog{},
-		&model.OpenAPIAction{},
-	); err != nil {
-		return err
+	tasks := []func() error{
+		func() error { return s.SysUser.AutoMigrate(ctx) },
+		func() error { return s.SysRole.AutoMigrate(ctx) },
+		func() error { return s.SysMenu.AutoMigrate(ctx) },
+		func() error { return s.SysDict.AutoMigrate(ctx) },
+		func() error { return s.SysStorage.AutoMigrate(ctx) },
+		func() error { return s.SysFile.AutoMigrate(ctx) },
+		func() error { return s.OpenApp.AutoMigrate(ctx) },
+		func() error { return s.OpenAPIStat.AutoMigrate(ctx) },
+		func() error { return s.OpenAPIAction.AutoMigrate(ctx) },
+	}
+	var wg sync.WaitGroup
+	errCh := make(chan error, len(tasks))
+	for _, task := range tasks {
+		task := task
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := task(); err != nil {
+				errCh <- err
+			}
+		}()
+	}
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		if err != nil {
+			return err
+		}
 	}
 	return applySchemaPatches(ctx, s.SysMenu.DB)
 }

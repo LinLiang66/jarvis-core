@@ -50,16 +50,7 @@ func TestStartupOpenSQLite(t *testing.T) {
 	if app.Driver != "sqlite" {
 		t.Fatalf("expected sqlite, got %s", app.Driver)
 	}
-
-	start = time.Now()
-	if err := migrateSys(context.Background(), app.Stores); err != nil {
-		t.Fatal(err)
-	}
-	if err := seedSystemRequired(context.Background(), app.Stores); err != nil {
-		t.Fatal(err)
-	}
-	warm := time.Since(start)
-	t.Logf("cold Open=%v warm migrate+seed=%v", first, warm)
+	t.Logf("cold Open=%v", first)
 }
 
 func TestStartupLegacyVsOptimized(t *testing.T) {
@@ -73,7 +64,7 @@ func TestStartupLegacyVsOptimized(t *testing.T) {
 	optimized := measureStartupSteps(t, dbPath, false)
 	saved := legacy - optimized
 	pct := float64(saved) / float64(legacy) * 100
-	t.Logf("legacy migrate+seed=%v optimized migrate+seed=%v saved=%v (%.0f%%)", legacy, optimized, saved, pct)
+	t.Logf("legacy=%v optimized=%v saved=%v (%.0f%%)", legacy, optimized, saved, pct)
 	if optimized >= legacy {
 		t.Fatalf("expected optimized faster than legacy, legacy=%v optimized=%v", legacy, optimized)
 	}
@@ -105,7 +96,7 @@ func measureStartupSteps(t *testing.T, dbPath string, legacy bool) time.Duration
 		if err := seedIncrementalMenus(ctx, stores); err != nil {
 			t.Fatal(err)
 		}
-		if err := seedSystemRequired(ctx, stores); err != nil {
+		if err := seedSystem(ctx, stores); err != nil {
 			t.Fatal(err)
 		}
 		if err := seedDefaultStorage(ctx, cfg, stores); err != nil {
@@ -115,8 +106,14 @@ func measureStartupSteps(t *testing.T, dbPath string, legacy bool) time.Duration
 		if err := migrateSys(ctx, stores); err != nil {
 			t.Fatal(err)
 		}
-		if err := seedSystemRequired(ctx, stores); err != nil {
+		syncSeed, err := needsSyncSeed(ctx, stores)
+		if err != nil {
 			t.Fatal(err)
+		}
+		if syncSeed {
+			if err := seedSystem(ctx, stores); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 	return time.Since(start)
