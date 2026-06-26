@@ -14,8 +14,10 @@ services:
   # Docker env vars below (or override via docker/.env: SCHEDULER_*, REDIS_*, POLL_*, INSTANCE_*)
   scheduler:
     build:
-      context: ..
-      dockerfile: scheduler/Dockerfile
+      context: ../scheduler
+      dockerfile: Dockerfile
+      args:
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-mirrors.aliyun.com}
     image: jarvis-core-scheduler:latest
     container_name: jarvis-core-scheduler
     restart: unless-stopped
