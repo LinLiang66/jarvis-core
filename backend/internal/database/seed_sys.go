@@ -165,7 +165,6 @@ func migrateSys(ctx context.Context, s *store.Stores) error {
 		func() error { return s.SysDict.AutoMigrate(ctx) },
 		func() error { return s.SysStorage.AutoMigrate(ctx) },
 		func() error { return s.SysFile.AutoMigrate(ctx) },
-		func() error { return s.SysFile.RepairDirTypes(ctx) },
 		func() error { return s.OpenApp.AutoMigrate(ctx) },
 		func() error { return s.OpenAPIStat.AutoMigrate(ctx) },
 		func() error { return s.OpenAPIAction.AutoMigrate(ctx) },
@@ -188,6 +187,10 @@ func migrateSys(ctx context.Context, s *store.Stores) error {
 		if err != nil {
 			return err
 		}
+	}
+	// RepairDirTypes 依赖 sys_files 表，必须在 AutoMigrate 之后串行执行
+	if err := s.SysFile.RepairDirTypes(ctx); err != nil {
+		return err
 	}
 	return applySchemaPatches(ctx, s.SysMenu.DB)
 }
