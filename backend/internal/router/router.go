@@ -14,7 +14,9 @@ import (
 	"jarvis-core/backend/internal/handler/auth"
 	"jarvis-core/backend/internal/handler/health"
 	openh "jarvis-core/backend/internal/handler/openplatform"
+	schedh "jarvis-core/backend/internal/handler/scheduler"
 	"jarvis-core/backend/internal/handler/system"
+	"jarvis-core/backend/internal/schedulerclient"
 	"jarvis-core/backend/internal/middleware"
 	"jarvis-core/backend/internal/model"
 	storagesvc "jarvis-core/backend/internal/service/storage"
@@ -66,6 +68,9 @@ func Setup(cfg *config.Config, app *database.App) *gin.Engine {
 	openh.NewActionHandler(opService).Register(secured.Group("/open-app"))
 	openh.NewDocHandler(opService).Register(secured.Group("/open-app"))
 	system.Register(secured, app, cfg)
+	schedh.New(cfg).Register(secured.Group("/scheduler"))
+
+	schedulerclient.StartDefault(context.Background(), schedulerclient.ConfigFromEnv())
 
 	registerLocalStatic(r, cfg, app)
 

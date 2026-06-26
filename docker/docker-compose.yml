@@ -1,13 +1,56 @@
-# jarvis-core 后端部署（Go API 容器 :8000；宿主机默认 :666）
+# jarvis-core 部署：scheduler-server (:9000) + jarvis 后端 API (:8000；宿主机默认 :666)
 #
 # 使用：
 #   cd docker
 #   copy .env.example .env
 #   docker compose up -d --build
 #
-# 访问：http://localhost:666/health
+# 访问：
+#   http://localhost:666/health        (backend)
+#   http://localhost:9000/health       (scheduler)
 
 services:
+  # Standalone local dev: copy scheduler/.env.example to scheduler/.env, then `cd scheduler && go run ./cmd/server`
+  # Docker env vars below (or override via docker/.env: SCHEDULER_*, REDIS_*, POLL_*, INSTANCE_*)
+  scheduler:
+    build:
+      context: ..
+      dockerfile: scheduler/Dockerfile
+    image: jarvis-core-scheduler:latest
+    container_name: jarvis-core-scheduler
+    restart: unless-stopped
+    ports:
+      - "${SCHEDULER_PORT:-9000}:9000"
+    environment:
+      SERVER_ADDR: ":9000"
+      MYSQL_DSN: ${SCHEDULER_MYSQL_DSN:-}
+      MYSQL_HOST: ${SCHEDULER_MYSQL_HOST:-host.docker.internal}
+      MYSQL_PORT: ${SCHEDULER_MYSQL_PORT:-3306}
+      MYSQL_USER: ${SCHEDULER_MYSQL_USER:-root}
+      MYSQL_PASSWORD: ${SCHEDULER_MYSQL_PASSWORD:-root}
+      MYSQL_DATABASE: ${SCHEDULER_MYSQL_DATABASE:-jarvis_scheduler}
+      MYSQL_CHARSET: ${SCHEDULER_MYSQL_CHARSET:-utf8mb4}
+      REDIS_ENABLE: ${REDIS_ENABLE:-true}
+      REDIS_REQUIRED: ${REDIS_REQUIRED:-true}
+      REDIS_ADDR: ${REDIS_ADDR:-host.docker.internal:6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_POOL_SIZE: ${REDIS_POOL_SIZE:-10}
+      ADMIN_TOKEN: ${SCHEDULER_ADMIN_TOKEN:-sched-admin-dev}
+      WORKER_TOKEN: ${SCHEDULER_WORKER_TOKEN:-sched-worker-dev}
+      POLL_TIMEOUT_SEC: ${POLL_TIMEOUT_SEC:-30}
+      POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-1000}
+      WORKER_TTL_SEC: ${WORKER_TTL_SEC:-90}
+      RUNNING_LOCK_TTL_SEC: ${RUNNING_LOCK_TTL_SEC:-3600}
+      INSTANCE_CLAIM_TIMEOUT_SEC: ${INSTANCE_CLAIM_TIMEOUT_SEC:-120}
+      INSTANCE_SCAN_INTERVAL_SEC: ${INSTANCE_SCAN_INTERVAL_SEC:-30}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
   backend:
     build:
       context: ..
@@ -26,6 +69,13 @@ services:
       DB_PATH: /app/data/app.db
       UPLOAD_DIR: /app/data/uploads
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:666}
+      SCHEDULER_SERVER_URL: ${SCHEDULER_SERVER_URL:-http://scheduler:9000}
+      SCHEDULER_ENABLE: ${SCHEDULER_ENABLE:-true}
+      SCHEDULER_ADMIN_TOKEN: ${SCHEDULER_ADMIN_TOKEN:-sched-admin-dev}
+      SCHEDULER_WORKER_TOKEN: ${SCHEDULER_WORKER_TOKEN:-sched-worker-dev}
+      SCHEDULER_POLL_TIMEOUT_SEC: ${SCHEDULER_POLL_TIMEOUT_SEC:-30}
+      SCHEDULER_POLL_EMPTY_BACKOFF_MS: ${SCHEDULER_POLL_EMPTY_BACKOFF_MS:-200}
+      SCHEDULER_POLL_IDLE_SEC: ${SCHEDULER_POLL_IDLE_SEC:-30}
     volumes:
       - backend-data:/app/data
     healthcheck:
@@ -34,6 +84,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 25s
+    depends_on:
+      scheduler:
+        condition: service_healthy
 
 volumes:
   backend-data:

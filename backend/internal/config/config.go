@@ -26,6 +26,11 @@ type Config struct {
 	ImageCompressMinBytes  int
 	ImageCompressMaxInput  int
 	DBAutoMigrate          bool
+	SchedulerServerURL     string
+	SchedulerAdminToken    string
+	SchedulerWorkerToken   string
+	SchedulerInstanceID    string
+	SchedulerEnable        bool
 }
 
 func Load() *Config {
@@ -49,7 +54,16 @@ func Load() *Config {
 		ImageCompressMinBytes: getEnvInt("IMAGE_COMPRESS_MIN_BYTES", 100*1024),
 		ImageCompressMaxInput: getEnvInt("IMAGE_COMPRESS_MAX_INPUT", 20*1024*1024),
 		DBAutoMigrate:         getEnvBool("DB_AUTO_MIGRATE", true),
+		SchedulerServerURL:    getEnv("SCHEDULER_SERVER_URL", "http://127.0.0.1:9000"),
+		SchedulerAdminToken:   getEnv("SCHEDULER_ADMIN_TOKEN", getEnv("ADMIN_TOKEN", "sched-admin-dev")),
+		SchedulerWorkerToken:  getEnv("SCHEDULER_WORKER_TOKEN", getEnv("WORKER_TOKEN", "sched-worker-dev")),
+		SchedulerInstanceID:   getEnv("SCHEDULER_INSTANCE_ID", ""),
+		SchedulerEnable:       getEnvBool("SCHEDULER_ENABLE", false),
 	}
+}
+
+func (c *Config) SchedulerEnabled() bool {
+	return c.SchedulerEnable && c.SchedulerServerURL != ""
 }
 
 func getEnv(key, fallback string) string {

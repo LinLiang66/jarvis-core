@@ -1,26 +1,37 @@
 # 部署指南
 
-## Docker 部署（仅后端）
+## Docker 部署（scheduler + 后端）
 
-当前 `docker/` 仅打包 **Go API**；MySQL、Redis 使用外部服务。
+`docker/` 同时打包 **scheduler-server**（`:9000`）与 **jarvis 后端 API**（容器 `:8000`）；MySQL、Redis 使用外部服务。
 
 ```powershell
 cd docker
 copy .env.example .env
-# 编辑 .env：MYSQL_*、REDIS_*、JWT_SECRET、BACKEND_PORT
+# 编辑 .env：MYSQL_*、SCHEDULER_MYSQL_*、REDIS_*、JWT_SECRET、SCHEDULER_* tokens
 docker compose up -d --build
 ```
 
 | 配置项 | 说明 | 默认 |
 |--------|------|------|
-| `BACKEND_PORT` | 宿主机映射端口 | `666` |
+| `BACKEND_PORT` | 后端宿主机映射端口 | `666` |
+| `SCHEDULER_PORT` | scheduler 宿主机映射端口 | `9000` |
 | `PUBLIC_BASE_URL` | 对外访问基址 | `http://localhost:666` |
+| `SCHEDULER_SERVER_URL` | 后端容器内连接 scheduler | `http://scheduler:9000` |
+| `SCHEDULER_MYSQL_*` | scheduler 独立库 | `jarvis_scheduler` |
+| `SCHEDULER_*_TOKEN` | admin/worker 鉴权（两端须一致） | 见 `.env.example` |
 | `JWT_SECRET` | 生产必改 | — |
-| `MYSQL_*` | 生产推荐 MySQL | 空则容器内 SQLite |
+| `MYSQL_*` | 后端业务库（生产推荐） | 空则容器内 SQLite |
 
-验证：`GET http://localhost:666/health`
+验证：
+
+- 后端：`GET http://localhost:666/health`
+- 调度：`GET http://localhost:9000/health`
+
+**拓扑**：compose 默认 **1 scheduler + 1 backend**；生产可水平扩展多个 backend 副本（共享同一 scheduler 与 Redis），scheduler 建议单实例部署。
 
 数据持久化：Docker volume `backend-data` → 容器 `/app/data`（SQLite 与上传文件）。
+
+本地单独调试 scheduler：`cd scheduler && copy .env.example .env && go run ./cmd/server`。详见 [任务调度](scheduler.md)。
 
 ## 前端部署
 
@@ -89,6 +100,7 @@ Linux 可使用 `run_linux.sh`；Windows 使用 `run_win.bat`（自动复制 `.e
 - [ ] 修改默认管理员密码
 - [ ] 设置强随机 `JWT_SECRET`
 - [ ] 使用 MySQL 而非 SQLite
+- [ ] **任务调度**：scheduler 使用独立库 `jarvis_scheduler`；`SCHEDULER_*_TOKEN` 在 scheduler 与 backend 间保持一致；Redis 对 scheduler **必需**
 - [ ] **网关多副本**：Redis 启用且各 Pod 指向同一实例（开放平台会话必需，见 [openplatform.md](openplatform.md)）
 - [ ] 配置 `PUBLIC_BASE_URL` 为真实域名（影响本地存储文件 URL 与默认存储访问路径）
 - [ ] 使用对象存储时配置正确的 S3 Endpoint；内网访问可设 `baseUrl`

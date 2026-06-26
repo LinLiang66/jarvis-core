@@ -8,7 +8,7 @@
 | Node.js | 18+ |
 | pnpm | 8+ |
 | MySQL | 8.0+（生产推荐；本地可仅用 SQLite） |
-| Redis | 6+（可选，登录 token 缓存） |
+| Redis | 6+（调度服务必需；后端登录 token 缓存可选） |
 | Docker | 23+（仅容器部署时需要） |
 
 ## 1. 克隆仓库
@@ -77,6 +77,43 @@ MYSQL_DATABASE=jarvis_core
 ```sql
 CREATE DATABASE jarvis_core DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
+
+## 2.5 启动调度服务（可选）
+
+任务调度由独立服务 **scheduler-server**（`:9000`）负责；jarvis 后端内嵌 **Worker 客户端**执行具体 handler，并通过 **`/api/v1/scheduler/*`** 为前端提供 BFF 管理代理。
+
+### 前置条件
+
+- MySQL 库 **`jarvis_scheduler`**（与 `jarvis_core` 分离）
+- Redis（调度队列、Worker 心跳、分布式锁）
+
+```sql
+CREATE DATABASE jarvis_scheduler DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 启动 scheduler-server
+
+```powershell
+cd scheduler
+copy .env.example .env
+# 编辑 MYSQL_*、REDIS_*、ADMIN_TOKEN、WORKER_TOKEN
+go run ./cmd/server
+```
+
+健康检查：`GET http://localhost:9000/health`
+
+### 启用 jarvis Worker + BFF
+
+在 `backend/.env` 中：
+
+```env
+SCHEDULER_ENABLE=true
+SCHEDULER_SERVER_URL=http://127.0.0.1:9000
+SCHEDULER_ADMIN_TOKEN=sched-admin-dev
+SCHEDULER_WORKER_TOKEN=sched-worker-dev
+```
+
+`SCHEDULER_ADMIN_TOKEN` / `SCHEDULER_WORKER_TOKEN` 须与 scheduler 的 `ADMIN_TOKEN` / `WORKER_TOKEN` 一致。完整变量见 [任务调度](scheduler.md)。
 
 ## 3. 启动前端
 

@@ -139,6 +139,17 @@ func incrementalMenuPatches() []menuPatch {
 		},
 		{
 			Dir: model.SysMenu{
+				Type: 1, Title: "任务调度", Name: "任务调度", Path: "/scheduler",
+				Component: "Layout", Redirect: "/scheduler/job", Icon: "Timer",
+				Sort: 6, AlwaysShow: true,
+			},
+			Children: []model.SysMenu{
+				{Type: 2, Title: "任务管理", Name: "任务管理", Path: "/scheduler/job", Component: "scheduler/job/index", Permission: "scheduler:job:query", Sort: 1, KeepAlive: true},
+				{Type: 2, Title: "执行记录", Name: "执行记录", Path: "/scheduler/instance", Component: "scheduler/instance/index", Permission: "scheduler:instance:query", Sort: 2, KeepAlive: true},
+			},
+		},
+		{
+			Dir: model.SysMenu{
 				Type: 1, Title: "系统管理", Name: "系统管理", Path: "/system",
 				Component: "Layout", Redirect: "/system/user", Icon: "Setting",
 				Sort: 10, AlwaysShow: true,

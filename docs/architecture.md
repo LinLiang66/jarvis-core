@@ -4,18 +4,24 @@
 
 ```text
 ┌─────────────┐     HTTP /api/v1      ┌──────────────────────────────┐
-│  Vue 3 前端  │ ────────────────────► │  Go API (Gin)                │
+│  Vue 3 前端  │ ────────────────────► │  jarvis 后端 (Gin)           │
 │  :5050      │     Bearer JWT        │  :8000                       │
-└─────────────┘                       │  ├─ auth（登录 / 用户信息）    │
-                                      │  ├─ system（RBAC 管理）       │
-                                      │  └─ openplatform（网关 + 管理）│
+└─────────────┘                       │  ├─ auth / system / openplatform
+                                      │  ├─ /api/v1/scheduler/* (BFF) │
+                                      │  └─ schedulerclient (Worker)  │
                                       └──────────┬───────────────────┘
                                                  │
                     ┌────────────────────────────┼────────────────────────────┐
                     ▼                            ▼                            ▼
-              MySQL / SQLite                  Redis                    本地静态 / 对象存储
-         （业务数据）              （登录 token + 开放平台会话 + 统计）   （/static 或 S3 兼容 OSS）
+              MySQL / SQLite                  Redis                    scheduler-server
+         jarvis_core（业务）          （登录 token / 开放平台会话）      :9000 / jarvis_scheduler
+                    │                            │                            │
+                    └────────────────────────────┴────────────────────────────┘
+                                                 │
+                                          本地静态 / 对象存储
 ```
+
+**任务调度部署拓扑**：**1 个 scheduler-server** + **N 个 jarvis 后端**（每个后端内嵌 Worker，向 scheduler 长轮询领取任务）。前端不直连 scheduler，管理接口经 jarvis BFF 代理至 `/admin/v1/*`。详见 [任务调度](scheduler.md)。
 
 开放平台多副本部署时，Redis 用于共享 **token/3DES 会话**（键 `open:session:{token}`）及统计同步锁；详见 [开放平台 - 网关集群部署](openplatform.md#网关集群部署jarvis-服务端)。
 
@@ -23,12 +29,13 @@
 
 ```text
 jarvis-core/
-├── backend/                 # Go REST API
+├── backend/                 # Go REST API（含 Worker 客户端与调度 BFF）
 │   ├── cmd/server/          # 入口
 │   └── internal/
 │       ├── config/          # 环境变量
 │       ├── router/          # 路由装配
-│       ├── handler/         # HTTP 层（auth、system、openplatform）
+│       ├── handler/         # HTTP 层（auth、system、openplatform、scheduler）
+│       ├── schedulerclient/ # 内嵌 Worker（长轮询 / 心跳 / handler 注册）
 │       ├── middleware/      # JWT、超管
 │       ├── service/
 │       │   ├── openplatform/  # 网关、Action 注册、加解密
@@ -36,16 +43,28 @@ jarvis-core/
 │       ├── store/           # GORM 仓储
 │       ├── model/           # 实体
 │       └── database/        # 迁移与种子
+├── scheduler/               # 独立调度服务 scheduler-server (:9000)
+│   ├── cmd/server/          # 入口
+│   └── internal/            # admin/worker API、引擎、MySQL + Redis
 ├── frontend/web/            # Vue 3 管理后台
 │   └── src/
 │       ├── apis/            # 接口封装
 │       ├── views/           # 页面（system、openplatform、dashboard）
 │       ├── router/          # 路由与守卫
 │       └── stores/          # Pinia 状态
-├── docker/                  # 后端容器化
+├── docker/                  # scheduler + 后端容器化
 ├── examples/                # 开放平台 SDK 示例（Go / Python / Java）
 └── docs/                    # 项目文档（本目录）
 ```
+
+## 任务调度分层
+
+| 组件 | 端口 | 职责 |
+|------|------|------|
+| scheduler-server | `:9000` | 任务元数据（MySQL `jarvis_scheduler`）、Cron 触发、实例调度、Redis 队列与锁 |
+| jarvis Worker | — | 内嵌于 backend，调用 `/worker/v1/*` 注册 handler、长轮询、上报执行结果 |
+| jarvis BFF | `:8000` | 鉴权后代理 `/api/v1/scheduler/*` → scheduler `/admin/v1/*` |
+| Vue 前端 | `:5050` | 经 BFF 管理任务与实例，不直连 scheduler |
 
 ## 后端分层
 

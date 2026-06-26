@@ -8,6 +8,7 @@
 - 用户 / 角色 / 菜单 / 字典 / 存储配置 / 文件管理
 - 本地存储 + S3 兼容对象存储、图片智能压缩、文件夹递归删除
 - 开放平台：统一网关、应用管理、接口文档、调用统计
+- 任务调度：scheduler-server + jarvis Worker + 前端 BFF 代理
 - Vue 3 + Element Plus + gi-component 管理界面
 - Go + Gin + GORM，MySQL / SQLite 双模式
 
@@ -16,6 +17,9 @@
 ```powershell
 # 后端
 cd backend && copy .env.example .env && go run ./cmd/server
+
+# 调度（可选，需 MySQL jarvis_scheduler + Redis）
+cd scheduler && copy .env.example .env && go run ./cmd/server
 
 # 前端（新终端）
 cd frontend/web && pnpm install && pnpm dev
@@ -33,6 +37,7 @@ cd frontend/web && pnpm install && pnpm dev
 | [架构说明](docs/architecture.md) | 模块与认证流程 |
 | [API 参考](docs/api-reference.md) | REST 接口一览 |
 | [开放平台](docs/openplatform.md) | 网关协议与接入 |
+| [任务调度](docs/scheduler.md) | scheduler-server 与 Worker 配置 |
 | [部署指南](docs/deployment.md) | Docker 与生产部署 |
 | [开发指南](docs/development.md) | 二次开发说明 |
 
@@ -40,16 +45,17 @@ cd frontend/web && pnpm install && pnpm dev
 
 ```text
 .
-├── backend/           # Go API
+├── backend/           # Go API（含 Worker 与调度 BFF）
+├── scheduler/         # 独立调度服务 (:9000)
 ├── frontend/web/      # Vue 3 管理后台
-├── docker/            # 后端 Docker
+├── docker/            # scheduler + 后端 Docker
 ├── examples/          # 开放平台 SDK 示例
 └── docs/              # 项目文档
 ```
 
 ## 环境要求
 
-Go 1.21+ · Node.js 18+ · pnpm · MySQL（推荐）· Redis（可选）
+Go 1.21+ · Node.js 18+ · pnpm · MySQL（推荐）· Redis（调度必需；后端登录缓存可选）
 
 ## Git 远程
 

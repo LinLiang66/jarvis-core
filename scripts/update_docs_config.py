@@ -54,6 +54,57 @@ IMAGE_COMPRESS_MAX_INPUT=20971520
 
 # Set false in production when schema is stable to skip AutoMigrate on boot
 DB_AUTO_MIGRATE=true
+
+# Scheduler (independent scheduler-server; jarvis acts as Worker + BFF proxy)
+SCHEDULER_ENABLE=false
+SCHEDULER_SERVER_URL=http://127.0.0.1:9000
+SCHEDULER_ADMIN_TOKEN=sched-admin-dev
+SCHEDULER_WORKER_TOKEN=sched-worker-dev
+SCHEDULER_INSTANCE_ID=
+# Match scheduler POLL_TIMEOUT_SEC; empty-poll backoff (ms)
+SCHEDULER_POLL_TIMEOUT_SEC=30
+SCHEDULER_POLL_EMPTY_BACKOFF_MS=200
+# When dispatch gate is closed, worker idle recheck interval (sec)
+SCHEDULER_POLL_IDLE_SEC=30
+"""
+
+SCHEDULER_ENV = """SERVER_ADDR=:9000
+
+# MySQL (scheduler uses its own database jarvis_scheduler)
+# Legacy override: set MYSQL_DSN to skip component vars below
+# MYSQL_DSN=root:root@tcp(127.0.0.1:3306)/jarvis_scheduler?charset=utf8mb4&parseTime=True&loc=Local
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=root
+MYSQL_DATABASE=jarvis_scheduler
+MYSQL_CHARSET=utf8mb4
+MYSQL_SHOW_SQL=false
+MYSQL_LOG_LEVEL=2
+MYSQL_MAX_OPEN_CONNS=20
+MYSQL_MAX_IDLE_CONNS=10
+
+# Redis (required; task queue, worker heartbeat, distributed locks)
+REDIS_ENABLE=true
+REDIS_REQUIRED=true
+REDIS_ADDR=127.0.0.1:6379
+REDIS_PASSWORD=
+REDIS_DB=0
+REDIS_POOL_SIZE=10
+REDIS_READ_TIMEOUT=3s
+
+# API tokens (must match backend SCHEDULER_ADMIN_TOKEN / SCHEDULER_WORKER_TOKEN when integrated)
+ADMIN_TOKEN=sched-admin-dev
+WORKER_TOKEN=sched-worker-dev
+
+# Engine tuning (seconds / milliseconds)
+POLL_TIMEOUT_SEC=30
+POLL_INTERVAL_MS=1000
+WORKER_TTL_SEC=90
+RUNNING_LOCK_TTL_SEC=3600
+# Instance scanner: reclaim stale claims / fail execution timeouts / discard when no worker
+INSTANCE_CLAIM_TIMEOUT_SEC=120
+INSTANCE_SCAN_INTERVAL_SEC=30
 """
 
 DOCKER_ENV = """# Host port mapping: host:666 -> container:8000
@@ -98,6 +149,31 @@ REDIS_READ_TIMEOUT=3s
 
 JWT_SECRET=jarvis-core-change-me-in-production
 JWT_EXPIRE_HOURS=24
+
+# Scheduler (independent service; see scheduler/.env.example for local run)
+SCHEDULER_PORT=9000
+SCHEDULER_MYSQL_HOST=host.docker.internal
+SCHEDULER_MYSQL_PORT=3306
+SCHEDULER_MYSQL_USER=root
+SCHEDULER_MYSQL_PASSWORD=root
+SCHEDULER_MYSQL_DATABASE=jarvis_scheduler
+# Legacy DSN override for scheduler container (optional; maps to MYSQL_DSN inside container)
+# SCHEDULER_MYSQL_DSN=root:root@tcp(host.docker.internal:3306)/jarvis_scheduler?charset=utf8mb4&parseTime=True&loc=Local
+SCHEDULER_ADMIN_TOKEN=sched-admin-dev
+SCHEDULER_WORKER_TOKEN=sched-worker-dev
+SCHEDULER_SERVER_URL=http://scheduler:9000
+SCHEDULER_ENABLE=true
+SCHEDULER_POLL_TIMEOUT_SEC=30
+SCHEDULER_POLL_EMPTY_BACKOFF_MS=200
+SCHEDULER_POLL_IDLE_SEC=30
+
+# Scheduler engine tuning (passed to scheduler container)
+POLL_TIMEOUT_SEC=30
+POLL_INTERVAL_MS=1000
+WORKER_TTL_SEC=90
+RUNNING_LOCK_TTL_SEC=3600
+INSTANCE_CLAIM_TIMEOUT_SEC=120
+INSTANCE_SCAN_INTERVAL_SEC=30
 """
 
 BACKEND_README = """# jarvis-core 后端
@@ -237,24 +313,32 @@ pnpm preview
 
 DOCKER_README = """# Docker 部署
 
-仅部署 **Go 后端 API** 容器；MySQL、Redis 使用外部服务。
+部署 **scheduler-server**（`:9000`）与 **jarvis 后端 API**（容器 `:8000`，宿主机默认 `:666`）；MySQL、Redis 使用外部服务。
 
 ## 使用步骤
 
 ```powershell
 cd docker
 copy .env.example .env
-# 编辑 .env，填写 MYSQL_*、REDIS_*、JWT_SECRET 等
+# 编辑 .env：MYSQL_*、SCHEDULER_MYSQL_*、REDIS_*、JWT_SECRET、SCHEDULER_* tokens
 docker compose up -d --build
 ```
 
-访问：`http://localhost:666/health`（端口由 `BACKEND_PORT` 控制，默认 666）。
+| 服务 | 健康检查 | 默认宿主机端口 |
+|------|----------|----------------|
+| jarvis 后端 | `GET http://localhost:666/health` | `666`（`BACKEND_PORT`） |
+| scheduler-server | `GET http://localhost:9000/health` | `9000`（`SCHEDULER_PORT`） |
 
 ## 说明
 
+- **部署拓扑**：1 个 scheduler-server + N 个 jarvis 后端 Worker；compose 默认各 1 副本
+- scheduler 使用独立库 **`jarvis_scheduler`**（与后端 `jarvis_core` 分离）
+- backend 容器通过 `SCHEDULER_SERVER_URL=http://scheduler:9000` 连接调度服务，并内嵌 Worker 客户端
 - 镜像内默认 SQLite 数据目录：`/app/data`（Docker volume `backend-data`）
-- 生产环境建议配置远程 MySQL，并修改 `JWT_SECRET`
+- 生产环境建议配置远程 MySQL，并修改 `JWT_SECRET` 与 `SCHEDULER_*_TOKEN`
 - 前端需单独构建部署，或将 `frontend/web/dist` 交由 Nginx 托管
+
+详见 [docs/deployment.md](../docs/deployment.md) 与 [docs/scheduler.md](../docs/scheduler.md)。
 """
 
 ROOT_README = """# jarvis-core
@@ -352,16 +436,59 @@ docker compose up -d --build
 - MySQL（生产推荐）、Redis（可选）
 """
 
-DOCKER_COMPOSE = """# jarvis-core 后端部署（Go API 容器 :8000；宿主机默认 :666）
+DOCKER_COMPOSE = """# jarvis-core 部署：scheduler-server (:9000) + jarvis 后端 API (:8000；宿主机默认 :666)
 #
 # 使用：
 #   cd docker
 #   copy .env.example .env
 #   docker compose up -d --build
 #
-# 访问：http://localhost:666/health
+# 访问：
+#   http://localhost:666/health        (backend)
+#   http://localhost:9000/health       (scheduler)
 
 services:
+  # Standalone local dev: copy scheduler/.env.example to scheduler/.env, then `cd scheduler && go run ./cmd/server`
+  # Docker env vars below (or override via docker/.env: SCHEDULER_*, REDIS_*, POLL_*, INSTANCE_*)
+  scheduler:
+    build:
+      context: ..
+      dockerfile: scheduler/Dockerfile
+    image: jarvis-core-scheduler:latest
+    container_name: jarvis-core-scheduler
+    restart: unless-stopped
+    ports:
+      - "${SCHEDULER_PORT:-9000}:9000"
+    environment:
+      SERVER_ADDR: ":9000"
+      MYSQL_DSN: ${SCHEDULER_MYSQL_DSN:-}
+      MYSQL_HOST: ${SCHEDULER_MYSQL_HOST:-host.docker.internal}
+      MYSQL_PORT: ${SCHEDULER_MYSQL_PORT:-3306}
+      MYSQL_USER: ${SCHEDULER_MYSQL_USER:-root}
+      MYSQL_PASSWORD: ${SCHEDULER_MYSQL_PASSWORD:-root}
+      MYSQL_DATABASE: ${SCHEDULER_MYSQL_DATABASE:-jarvis_scheduler}
+      MYSQL_CHARSET: ${SCHEDULER_MYSQL_CHARSET:-utf8mb4}
+      REDIS_ENABLE: ${REDIS_ENABLE:-true}
+      REDIS_REQUIRED: ${REDIS_REQUIRED:-true}
+      REDIS_ADDR: ${REDIS_ADDR:-host.docker.internal:6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_POOL_SIZE: ${REDIS_POOL_SIZE:-10}
+      ADMIN_TOKEN: ${SCHEDULER_ADMIN_TOKEN:-sched-admin-dev}
+      WORKER_TOKEN: ${SCHEDULER_WORKER_TOKEN:-sched-worker-dev}
+      POLL_TIMEOUT_SEC: ${POLL_TIMEOUT_SEC:-30}
+      POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-1000}
+      WORKER_TTL_SEC: ${WORKER_TTL_SEC:-90}
+      RUNNING_LOCK_TTL_SEC: ${RUNNING_LOCK_TTL_SEC:-3600}
+      INSTANCE_CLAIM_TIMEOUT_SEC: ${INSTANCE_CLAIM_TIMEOUT_SEC:-120}
+      INSTANCE_SCAN_INTERVAL_SEC: ${INSTANCE_SCAN_INTERVAL_SEC:-30}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
   backend:
     build:
       context: ..
@@ -380,6 +507,13 @@ services:
       DB_PATH: /app/data/app.db
       UPLOAD_DIR: /app/data/uploads
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:666}
+      SCHEDULER_SERVER_URL: ${SCHEDULER_SERVER_URL:-http://scheduler:9000}
+      SCHEDULER_ENABLE: ${SCHEDULER_ENABLE:-true}
+      SCHEDULER_ADMIN_TOKEN: ${SCHEDULER_ADMIN_TOKEN:-sched-admin-dev}
+      SCHEDULER_WORKER_TOKEN: ${SCHEDULER_WORKER_TOKEN:-sched-worker-dev}
+      SCHEDULER_POLL_TIMEOUT_SEC: ${SCHEDULER_POLL_TIMEOUT_SEC:-30}
+      SCHEDULER_POLL_EMPTY_BACKOFF_MS: ${SCHEDULER_POLL_EMPTY_BACKOFF_MS:-200}
+      SCHEDULER_POLL_IDLE_SEC: ${SCHEDULER_POLL_IDLE_SEC:-30}
     volumes:
       - backend-data:/app/data
     healthcheck:
@@ -388,6 +522,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 25s
+    depends_on:
+      scheduler:
+        condition: service_healthy
 
 volumes:
   backend-data:
@@ -445,6 +582,7 @@ def write(rel: str, content: str) -> None:
 
 def main() -> None:
     write("backend/.env.example", BACKEND_ENV)
+    write("scheduler/.env.example", SCHEDULER_ENV)
     write("docker/.env.example", DOCKER_ENV)
     write("docker/docker-compose.yml", DOCKER_COMPOSE)
     write("backend/sql/patch_sys_menu_routes.sql", SQL_PATCH)

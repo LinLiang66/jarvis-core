@@ -6,6 +6,8 @@
 // biome-ignore lint: disable
 export {}
 declare global {
+  const DEFAULT_INPUT_MAXLENGTH: typeof import('./utils/formField').DEFAULT_INPUT_MAXLENGTH
+  const DEFAULT_TEXTAREA_MAXLENGTH: typeof import('./utils/formField').DEFAULT_TEXTAREA_MAXLENGTH
   const EMAIL_REG: typeof import('./utils/regexp').EMAIL_REG
   const EffectScope: typeof import('vue').EffectScope
   const ElMessage: typeof import('element-plus/es').ElMessage
@@ -49,6 +51,7 @@ declare global {
   const fileToBase64: typeof import('./utils/fileBase64').fileToBase64
   const filterSortTree: typeof import('./utils/index').filterSortTree
   const filterTree: typeof import('./utils/index').filterTree
+  const formatDateTime: typeof import('./utils/format').formatDateTime
   const getActivePinia: typeof import('pinia').getActivePinia
   const getCurrentInstance: typeof import('vue').getCurrentInstance
   const getCurrentScope: typeof import('vue').getCurrentScope
@@ -58,6 +61,7 @@ declare global {
   const ignorableWatch: typeof import('@vueuse/core').ignorableWatch
   const inject: typeof import('vue').inject
   const injectLocal: typeof import('@vueuse/core').injectLocal
+  const inputProps: typeof import('./utils/formField').inputProps
   const isDefined: typeof import('@vueuse/core').isDefined
   const isExternal: typeof import('./utils/index').isExternal
   const isProxy: typeof import('vue').isProxy
@@ -124,6 +128,7 @@ declare global {
   const syncRef: typeof import('@vueuse/core').syncRef
   const syncRefs: typeof import('@vueuse/core').syncRefs
   const templateRef: typeof import('@vueuse/core').templateRef
+  const textareaProps: typeof import('./utils/formField').textareaProps
   const throttledRef: typeof import('@vueuse/core').throttledRef
   const throttledWatch: typeof import('@vueuse/core').throttledWatch
   const toId: typeof import('./utils/id').toId
